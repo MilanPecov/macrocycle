@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from macros.domain.model.macro import LlmStep
 from macros.domain.model.cycle import StepRun
@@ -22,8 +22,8 @@ class TestPromptBuilder(unittest.TestCase):
     def _make_step_run(self, step_id: str, output: str) -> StepRun:
         return StepRun(
             step_id=step_id,
-            started_at=datetime.now(UTC),
-            finished_at=datetime.now(UTC),
+            started_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(timezone.utc),
             output_text=output,
             engine="cursor",
             exit_code=0,

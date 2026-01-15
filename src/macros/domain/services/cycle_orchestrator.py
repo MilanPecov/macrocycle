@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import Cycle, CycleStatus, StepRun
@@ -52,7 +52,7 @@ class CycleOrchestrator:
             stop_after: If set, stop after completing this step ID
         """
         # Initialize cycle
-        started_at = datetime.now(UTC)
+        started_at = datetime.now(timezone.utc)
         cycle_dir = self._store.create_cycle_dir(macro.macro_id)
         self._store.write_text(cycle_dir, "input.txt", input_text)
         results: list[StepRun] = []
@@ -136,9 +136,9 @@ class CycleOrchestrator:
             include_previous_context=macro.include_previous_outputs,
         )
 
-        started = datetime.now(UTC)
+        started = datetime.now(timezone.utc)
         exit_code, output = self._agent.run_prompt(prompt)
-        finished = datetime.now(UTC)
+        finished = datetime.now(timezone.utc)
 
         return StepRun(
             step_id=step.id,
@@ -175,7 +175,7 @@ class CycleOrchestrator:
         failure_reason: str | None,
         started_at: datetime,
     ) -> Cycle:
-        finished_at = datetime.now(UTC) if status != CycleStatus.RUNNING else None
+        finished_at = datetime.now(timezone.utc) if status != CycleStatus.RUNNING else None
         return Cycle(
             cycle_id=cycle_dir.split("/")[-1],
             macro_id=macro.macro_id,
