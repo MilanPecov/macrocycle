@@ -1,0 +1,56 @@
+[project]
+name = "macrocycle"
+version = "0.1.0"
+description = "Ritualized AI agent workflows - multi-pass prompt pipelines for Cursor and beyond"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Milan Pecov"}]
+keywords = ["ai", "agent", "cursor", "workflow", "automation", "llm"]
+requires-python = ">=3.10"
+dependencies = [
+    "typer>=0.12.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.scripts]
+macrocycle = "macros.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/MilanPecov/macrocycle"
+Repository = "https://github.com/MilanPecov/macrocycle"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"macros.infrastructure.persistence.defaults" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/macros/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-q"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

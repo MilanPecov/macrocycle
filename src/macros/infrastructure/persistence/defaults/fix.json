@@ -1,0 +1,49 @@
+{
+  "macro_id": "fix",
+  "name": "Fix Macrocycle",
+  "engine": "cursor",
+  "mode": "auto",
+  "include_previous_outputs": true,
+  "steps": [
+    {
+      "id": "impact",
+      "type": "llm",
+      "prompt": "Perform a focused impact analysis for the issue below.\n\nFollow this process:\nStep 1: Provide your initial answer\nStep 2: List potential errors or gaps in your answer\nStep 3: For each potential error, verify using factual reasoning\nStep 4: Provide corrected final answer\n\nError context:\n\n{{INPUT}}\n"
+    },
+    {
+      "id": "plan",
+      "type": "llm",
+      "prompt": "Produce a concrete plan. Keep steps atomic and verifiable.\nOutput:\n- Steps (numbered)\n- Files to touch (with reasons)\n- Test plan (unit/integration)\n- Rollout/verify\n"
+    },
+    {
+      "id": "reject",
+      "type": "llm",
+      "prompt": "Your plan was reviewed by senior, staff and principal engineers. They are not happy with any hand-waving. Make the plan more technical and precise in its explanations.\n"
+    },
+    {
+      "id": "review",
+      "type": "llm",
+      "prompt": "Carefully read over all new or modified code and the plan with fresh eyes, looking for any obvious bugs, errors, problems, issues, or confusion. Identify and fix them.\n"
+    },
+    {
+      "id": "approve",
+      "type": "gate",
+      "message": "Approve the plan and proceed?"
+    },
+    {
+      "id": "simplify",
+      "type": "llm",
+      "prompt": "You are an expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Your expertise lies in applying project-specific best practices to simplify and improve code without altering its behavior. You prioritize readable, explicit code over overly compact solutions.\n\nYour refinement process\n\n1. Identify the recently modified code sections\n2. Analyze for opportunities to improve elegance and consistency\n3. Apply project-specific best practices and coding standards\n4. Ensure all functionality remains unchanged\n5. Verify the refined code is simpler and more maintainable\n6. Document only significant changes that affect understanding\n"
+    },
+    {
+      "id": "implement",
+      "type": "llm",
+      "prompt": "Implement it now. Make a branch, add tests if needed, run tests, and commit."
+    },
+    {
+      "id": "pr",
+      "type": "llm",
+      "prompt": "Create a PR. Write a strong PR description: context + fix summary + how verified."
+    }
+  ]
+}
