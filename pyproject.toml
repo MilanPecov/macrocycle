@@ -1,6 +1,6 @@
 [project]
 name = "macrocycle"
-version = "0.1.0"
+version = "0.1.1"
 description = "Ritualized AI agent workflows - multi-pass prompt pipelines for Cursor and beyond"
 readme = "README.md"
 license = {text = "MIT"}
@@ -61,7 +61,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.1.0"
+version = "0.1.1"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:^version"

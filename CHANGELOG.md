@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.1.1 (2026-01-15)
+
+### Fix
+
+- use timezone.utc for Python 3.10 compatibility
+
 ## v0.1.0 (2025-01-15)
 
 ### Features
