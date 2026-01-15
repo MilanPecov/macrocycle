@@ -73,18 +73,29 @@ cd macrocycle
 
 # Using uv (recommended)
 uv venv && source .venv/bin/activate
-uv pip install -e .[test]
+uv pip install -e .[dev]
 
 # Or using standard venv
 python -m venv .venv && source .venv/bin/activate
-pip install -e .[test]
+pip install -e .[dev]
 ```
 
 ## 🧪 Test
 
 ```bash
-pytest                  # Run all tests
+pytest
 ```
+
+## 🚀 Release
+
+```bash
+make release            # Auto-bump based on commits
+make release-patch      # 0.1.0 → 0.1.1
+make release-minor      # 0.1.0 → 0.2.0
+make release-major      # 0.1.0 → 1.0.0
+```
+
+Pushing a tag triggers CI → tests → PyPI publish → GitHub release.
 
 ## License
 
