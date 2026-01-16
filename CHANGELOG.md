@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.1.3 (2026-01-16)
+
+### Fix
+
+- default prompt improvement
+- architecture cleanup -part 2
+- architecture cleanup
+
+### Refactor
+
+- DDD cleanup - simplify layers, remove redundancies
+
 ## v0.1.2 (2026-01-15)
 
 ### Feat
