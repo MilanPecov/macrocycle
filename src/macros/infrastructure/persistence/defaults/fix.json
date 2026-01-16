@@ -28,7 +28,7 @@
     {
       "id": "implement",
       "type": "llm",
-      "prompt": "Implement the approved plan now. Create a branch, make the changes, add tests if needed, run tests, and commit.\n"
+      "prompt": "Implement the approved plan now. Make the code changes, add tests if needed, and run tests to verify. Do not commit yet.\n"
     },
     {
       "id": "review",
@@ -38,12 +38,12 @@
     {
       "id": "simplify",
       "type": "llm",
-      "prompt": "Simplify and clean up the code you wrote. Focus on:\n- Removing unnecessary complexity\n- Improving readability\n- Following project conventions\n- Ensuring the code is maintainable\n\nDo not change functionality, only improve clarity.\n"
+      "prompt": "Simplify and clean up the code. Focus on:\n- Removing unnecessary complexity\n- Improving readability\n- Following project conventions\n- Ensuring maintainability\n\nDo not change functionality, only improve clarity.\n"
     },
     {
       "id": "pr",
       "type": "llm",
-      "prompt": "Create a pull request with a clear description:\n- Context: what was the issue?\n- Solution: what did you change and why?\n- Testing: how was this verified?\n"
+      "prompt": "Commit all changes with a clear commit message, then create a pull request.\n\nPR description should include:\n- Context: what was the issue?\n- Solution: what changed and why?\n- Testing: how was this verified?\n"
     }
   ]
 }
