@@ -1,6 +1,6 @@
 {
   "macro_id": "fix",
-  "name": "Fix Macrocycle",
+  "name": "Fix",
   "engine": "cursor",
   "mode": "auto",
   "include_previous_outputs": true,
@@ -8,42 +8,42 @@
     {
       "id": "impact",
       "type": "llm",
-      "prompt": "Perform a focused impact analysis for the issue below.\n\nFollow this process:\nStep 1: Provide your initial answer\nStep 2: List potential errors or gaps in your answer\nStep 3: For each potential error, verify using factual reasoning\nStep 4: Provide corrected final answer\n\nError context:\n\n{{INPUT}}\n"
+      "prompt": "Perform a focused impact analysis for the issue below.\n\nFollow this process:\n1. Provide your initial answer\n2. List potential errors or gaps in your answer\n3. For each potential error, verify using factual reasoning\n4. Provide corrected final answer\n\nError context:\n\n{{INPUT}}\n"
     },
     {
       "id": "plan",
       "type": "llm",
-      "prompt": "Produce a concrete plan. Keep steps atomic and verifiable.\nOutput:\n- Steps (numbered)\n- Files to touch (with reasons)\n- Test plan (unit/integration)\n- Rollout/verify\n"
+      "prompt": "Produce a concrete plan to fix this issue. Keep steps atomic and verifiable.\n\nOutput:\n- Steps (numbered)\n- Files to touch (with reasons)\n- Test plan (unit/integration)\n- Rollout/verify\n"
     },
     {
       "id": "reject",
       "type": "llm",
-      "prompt": "Your plan was reviewed by senior, staff and principal engineers. They are not happy with any hand-waving. Make the plan more technical and precise in its explanations.\n"
-    },
-    {
-      "id": "review",
-      "type": "llm",
-      "prompt": "Carefully read over all new or modified code and the plan with fresh eyes, looking for any obvious bugs, errors, problems, issues, or confusion. Identify and fix them.\n"
+      "prompt": "Your plan was reviewed by senior, staff and principal engineers. They rejected it - too much hand-waving. Revise the plan to be more technical and precise. Be specific about what code changes, why, and how you'll verify.\n"
     },
     {
       "id": "approve",
       "type": "gate",
-      "message": "Approve the plan and proceed?"
-    },
-    {
-      "id": "simplify",
-      "type": "llm",
-      "prompt": "You are an expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Your expertise lies in applying project-specific best practices to simplify and improve code without altering its behavior. You prioritize readable, explicit code over overly compact solutions.\n\nYour refinement process\n\n1. Identify the recently modified code sections\n2. Analyze for opportunities to improve elegance and consistency\n3. Apply project-specific best practices and coding standards\n4. Ensure all functionality remains unchanged\n5. Verify the refined code is simpler and more maintainable\n6. Document only significant changes that affect understanding\n"
+      "message": "Review the refined plan above. Approve to proceed with implementation?"
     },
     {
       "id": "implement",
       "type": "llm",
-      "prompt": "Implement it now. Make a branch, add tests if needed, run tests, and commit."
+      "prompt": "Implement the approved plan now. Create a branch, make the changes, add tests if needed, run tests, and commit.\n"
+    },
+    {
+      "id": "review",
+      "type": "llm",
+      "prompt": "Review all the code you just wrote with fresh eyes. Look for bugs, edge cases, missing error handling, or anything that could break. Fix any issues you find.\n"
+    },
+    {
+      "id": "simplify",
+      "type": "llm",
+      "prompt": "Simplify and clean up the code you wrote. Focus on:\n- Removing unnecessary complexity\n- Improving readability\n- Following project conventions\n- Ensuring the code is maintainable\n\nDo not change functionality, only improve clarity.\n"
     },
     {
       "id": "pr",
       "type": "llm",
-      "prompt": "Create a PR. Write a strong PR description: context + fix summary + how verified."
+      "prompt": "Create a pull request with a clear description:\n- Context: what was the issue?\n- Solution: what did you change and why?\n- Testing: how was this verified?\n"
     }
   ]
 }
