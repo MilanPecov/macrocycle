@@ -28,19 +28,41 @@ git checkout -b fix/your-issue
 macrocycle run fix "Paste your error context here"
 ```
 
-## 🔁 Run at Scale
+## 🔁 Orchestration
 
-Loop through problems and let agents work in parallel:
+Macrocycle is composable — pipe in data from any source, run in parallel, integrate with your toolchain.
+
+**Example: Batch-fix [Sentry](https://sentry.io) errors**
+
+[Sentry](https://sentry.io) is an error monitoring platform. This script pulls unresolved issues from the last 24h and spawns parallel agents to fix each one:
 
 ```bash
-# Fix all Sentry errors from today
-for error in $(sentry-cli issues list --status unresolved); do
-  git checkout -b fix/$error
-  macrocycle run fix "$(sentry-cli issues get $error)" &
-done
+# Fix all new unresolved issues from the last 24h (with latest event)
+set -euo pipefail
+: "${SENTRY_AUTH_TOKEN:?}" "${SENTRY_ORG:?}" "${SENTRY_PROJECT:?}"
+SENTRY_URL="${SENTRY_URL:-https://sentry.io}"
+QUERY='is:unresolved age:-24h'
+
+sentry-cli issues list -o "$SENTRY_ORG" -p "$SENTRY_PROJECT" --query "$QUERY" \
+| awk 'NR>3 && $1 ~ /^[0-9]+$/ {print $1}' \
+| while read -r issue_id; do
+    [ -n "$issue_id" ] || continue
+    git checkout -b "fix/sentry-$issue_id"
+    macrocycle run fix "$(
+      curl -sS -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+        "$SENTRY_URL/api/0/organizations/$SENTRY_ORG/issues/$issue_id/"
+      echo
+      curl -sS -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+        "$SENTRY_URL/api/0/organizations/$SENTRY_ORG/issues/$issue_id/events/?full=true&per_page=1"
+    )" &
+  done
+
+wait
 ```
 
 Each agent runs the full ritual: impact → plan → review → implement → PR.
+
+The same pattern works with any issue tracker, log aggregator, or CI pipeline.
 
 ## 🛠 CLI Commands
 
@@ -67,36 +89,4 @@ macrocycle run fix "..." --until impact  # Stop after specific step
 
 ## 🧑‍💻 Development
 
-```bash
-git clone https://github.com/MilanPecov/macrocycle.git
-cd macrocycle
-
-# Using uv (recommended)
-uv venv && source .venv/bin/activate
-uv pip install -e .[dev]
-
-# Or using standard venv
-python -m venv .venv && source .venv/bin/activate
-pip install -e .[dev]
-```
-
-## 🧪 Test
-
-```bash
-pytest
-```
-
-## 🚀 Release
-
-```bash
-make release            # Auto-bump based on commits
-make release-patch      # 0.1.0 → 0.1.1
-make release-minor      # 0.1.0 → 0.2.0
-make release-major      # 0.1.0 → 1.0.0
-```
-
-Pushing a tag triggers CI → tests → PyPI publish → GitHub release.
-
-## License
-
-MIT
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, testing, and releases.
