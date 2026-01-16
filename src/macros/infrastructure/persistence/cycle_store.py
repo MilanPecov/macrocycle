@@ -1,20 +1,21 @@
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 import secrets
 
+from macros.application.dto import CycleInfo
 from macros.domain.ports.cycle_store_port import CycleStorePort
+from macros.infrastructure.persistence.mappers import CycleDirParser
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 class FileCycleStore(CycleStorePort):
-    """Creates and writes cycle artifacts to disk."""
+    """Cycle artifact storage and retrieval."""
 
     @property
     def _cycles_dir(self) -> Path:
         return get_workspace() / ".macrocycle" / "cycles"
 
     def init_cycles_dir(self) -> None:
-        """Ensure the cycles directory exists."""
         self._cycles_dir.mkdir(parents=True, exist_ok=True)
 
     def create_cycle_dir(self, macro_id: str) -> str:
@@ -30,3 +31,13 @@ class FileCycleStore(CycleStorePort):
         p = Path(cycle_dir) / rel_path
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
+
+    def get_latest_cycle(self) -> CycleInfo | None:
+        if not self._cycles_dir.exists():
+            return None
+
+        cycle_dirs = sorted(self._cycles_dir.iterdir(), reverse=True)
+        if not cycle_dirs:
+            return None
+
+        return CycleDirParser.parse(cycle_dirs[0])

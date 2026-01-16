@@ -1,8 +1,7 @@
 from typing import Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from macros.application.usecases.get_status import CycleInfo
-    from macros.application.usecases.preview_macro import MacroPreview
+    from macros.application.dto import CycleInfo, MacroPreview
 
 
 class ConsolePort(Protocol):
