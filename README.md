@@ -60,7 +60,7 @@ sentry-cli issues list -o "$SENTRY_ORG" -p "$SENTRY_PROJECT" --query "$QUERY" \
 wait
 ```
 
-Each agent runs the full ritual: impact → plan → review → implement → PR.
+Each agent runs the full ritual: impact → plan → reject → approve → implement → review → simplify → PR.
 
 The same pattern works with any issue tracker, log aggregator, or CI pipeline.
 
