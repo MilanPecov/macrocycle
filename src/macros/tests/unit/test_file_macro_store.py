@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from macros.infrastructure.persistence import FileMacroStore
-from macros.infrastructure.runtime.workspace import set_workspace
+from macros.infrastructure.runtime.utils.workspace import set_workspace
 
 
 class TestFileMacroStore(unittest.TestCase):

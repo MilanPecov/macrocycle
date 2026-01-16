@@ -1,13 +1,20 @@
+"""CLI entry point - thin orchestration layer."""
+
 from importlib.metadata import version as pkg_version
-from pathlib import Path
 from typing import Annotated, Optional
-import sys
 
 import typer
 
 from macros.application.container import Container
-from macros.application.usecases import init_repo, list_macros, run_macro, get_status
-from macros.infrastructure.runtime.workspace import get_workspace
+from macros.application.usecases import (
+    init_repo,
+    list_macros,
+    run_macro,
+    get_status,
+    preview_macro,
+)
+from macros.infrastructure.runtime.utils.input_resolver import resolve_input
+from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 app = typer.Typer(no_args_is_help=True)
 container = Container()
@@ -37,9 +44,7 @@ def list_cmd() -> None:
     if not macros:
         container.console.warn("No macros found. Run: macrocycle init")
         raise typer.Exit(code=1)
-
-    for m in macros:
-        typer.echo(m)
+    container.console.print_list(macros)
 
 
 @app.command()
@@ -49,54 +54,34 @@ def status() -> None:
     if not info:
         container.console.warn("No cycles found. Run: macrocycle run <macro> <input>")
         raise typer.Exit(code=1)
-
-    container.console.info(f"Last cycle: {info.macro_id}")
-    container.console.info(f"  Started:   {info.started_at.strftime('%Y-%m-%d %H:%M:%S')}")
-    container.console.info(f"  Steps:     {info.step_count} completed")
-    container.console.info(f"  Artifacts: {info.cycle_dir}")
+    container.console.print_status(info)
 
 
 @app.command()
 def run(
-        macro_id: str,
-        input_text: Optional[str] = typer.Argument(None),
-        input_file: str = typer.Option(None, "--input-file", "-i"),
-        yes: bool = typer.Option(False, "--yes", help="Skip gate approvals"),
-        until: Optional[str] = typer.Option(None, "--until", help="Stop after this step id"),
-        dry_run: bool = typer.Option(False, "--dry-run", help="Preview steps without executing"),
+    macro_id: str,
+    input_text: Optional[str] = typer.Argument(None),
+    input_file: str = typer.Option(None, "--input-file", "-i"),
+    yes: bool = typer.Option(False, "--yes", help="Skip gate approvals"),
+    until: Optional[str] = typer.Option(None, "--until", help="Stop after this step id"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview prompts without executing"),
 ) -> None:
     """Run a macro. Use --dry-run to preview steps first."""
-    # Handle dry-run: just show the macro structure
+    input_text = resolve_input(input_text, input_file)
+
     if dry_run:
         try:
-            macro = container.macro_registry.load_macro(macro_id)
+            preview = preview_macro(container, macro_id, input_text)
         except FileNotFoundError:
             container.console.warn(f"Macro not found: {macro_id}")
             raise typer.Exit(code=1)
-
-        container.console.info(f"Macro: {macro.name} ({len(macro.steps)} steps)")
-        for i, step in enumerate(macro.steps, 1):
-            container.console.info(f"  {i}. \\[{step.type}] {step.id}")
+        container.console.print_preview(preview)
         raise typer.Exit()
-
-    # Handle stdin via "-" or piped input
-    if input_text == "-" or (input_text is None and input_file is None and not sys.stdin.isatty()):
-        input_text = sys.stdin.read().strip()
-
-    if input_file:
-        input_text = Path(input_file).read_text(encoding="utf-8")
 
     if not input_text:
         container.console.warn("Provide input_text, --input-file, or pipe via stdin.")
         raise typer.Exit(code=2)
 
-    summary = run_macro(
-        container,
-        macro_id,
-        input_text,
-        yes=yes,
-        until=until,
-    )
-
+    cycle = run_macro(container, macro_id, input_text, yes=yes, until=until)
     container.console.info("Done.")
-    container.console.info(f"Cycle dir: {summary.cycle_dir}")
+    container.console.info(f"Cycle dir: {cycle.cycle_dir}")

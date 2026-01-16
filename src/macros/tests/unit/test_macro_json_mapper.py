@@ -3,7 +3,7 @@ import json
 import tempfile
 
 from macros.infrastructure.persistence import MacroJsonMapper, FileMacroStore
-from macros.infrastructure.runtime.workspace import set_workspace
+from macros.infrastructure.runtime.utils.workspace import set_workspace
 
 
 class TestMacroJsonMapper(unittest.TestCase):

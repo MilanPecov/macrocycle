@@ -5,7 +5,7 @@ from typing import List
 from macros.domain.model.macro import Macro
 from macros.domain.ports.macro_registry_port import MacroRegistryPort
 from macros.infrastructure.persistence.mappers import MacroJsonMapper
-from macros.infrastructure.runtime.workspace import get_workspace
+from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 # Package path for packaged default macros

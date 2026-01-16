@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from macros.application.container import Container
-from macros.infrastructure.runtime.workspace import get_workspace
+from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 @dataclass

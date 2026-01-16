@@ -1,12 +1,19 @@
-from typing import Protocol
+from typing import Protocol, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from macros.application.usecases.get_status import CycleInfo
+    from macros.application.usecases.preview_macro import MacroPreview
 
 
 class ConsolePort(Protocol):
-    def info(self, msg: str) -> None:
-        raise NotImplementedError
+    """Port for console output operations."""
 
-    def warn(self, msg: str) -> None:
-        raise NotImplementedError
+    def info(self, msg: str) -> None: ...
+    def warn(self, msg: str) -> None: ...
+    def echo(self, msg: str) -> None: ...
+    def confirm(self, msg: str, default: bool = True) -> bool: ...
 
-    def confirm(self, msg: str, default: bool = True) -> bool:
-        raise NotImplementedError
+    # Structured output
+    def print_list(self, items: list[str]) -> None: ...
+    def print_status(self, info: "CycleInfo") -> None: ...
+    def print_preview(self, preview: "MacroPreview") -> None: ...

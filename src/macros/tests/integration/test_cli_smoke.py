@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 from macros.cli import app
 from macros.application.container import Container
 from macros.domain.ports.agent_port import AgentPort
-from macros.infrastructure.runtime.workspace import set_workspace
+from macros.infrastructure.runtime.utils.workspace import set_workspace
 import macros.cli as cli_module
 
 

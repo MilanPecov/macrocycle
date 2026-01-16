@@ -2,7 +2,7 @@ import subprocess
 
 from macros.domain.ports.agent_port import AgentPort
 from macros.domain.ports.console_port import ConsolePort
-from macros.infrastructure.runtime.workspace import get_workspace
+from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 TIMEOUT_SECONDS = 300  # Avoid hanging indefinitely

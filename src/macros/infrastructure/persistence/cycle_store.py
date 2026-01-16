@@ -3,7 +3,7 @@ from datetime import datetime
 import secrets
 
 from macros.domain.ports.cycle_store_port import CycleStorePort
-from macros.infrastructure.runtime.workspace import get_workspace
+from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 class FileCycleStore(CycleStorePort):
