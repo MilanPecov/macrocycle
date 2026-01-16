@@ -37,7 +37,7 @@ class FakeCycleStore(CycleStorePort):
     def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:
         self.writes.append((cycle_dir, rel_path, content))
 
-    def get_latest_cycle(self):
+    def get_latest_cycle_dir(self) -> str | None:
         return None
 
 
@@ -49,6 +49,9 @@ class FakeConsole(ConsolePort):
         pass
 
     def warn(self, msg: str) -> None:
+        pass
+
+    def echo(self, msg: str) -> None:
         pass
 
     def confirm(self, msg: str, default: bool = True) -> bool:

@@ -1,6 +1,6 @@
 from macros.application.container import Container
 from macros.domain.model import MacroPreview
-from macros.domain.services import PreviewBuilder
+from macros.application.services import PreviewBuilder
 
 
 def preview_macro(

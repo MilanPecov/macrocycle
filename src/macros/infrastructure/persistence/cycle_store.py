@@ -2,14 +2,12 @@ from datetime import datetime
 from pathlib import Path
 import secrets
 
-from macros.domain.model import CycleInfo
 from macros.domain.ports.cycle_store_port import CycleStorePort
-from macros.infrastructure.persistence.mappers import CycleDirParser
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
 class FileCycleStore(CycleStorePort):
-    """Cycle artifact storage and retrieval."""
+    """Cycle artifact storage."""
 
     @property
     def _cycles_dir(self) -> Path:
@@ -32,7 +30,7 @@ class FileCycleStore(CycleStorePort):
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
 
-    def get_latest_cycle(self) -> CycleInfo | None:
+    def get_latest_cycle_dir(self) -> str | None:
         if not self._cycles_dir.exists():
             return None
 
@@ -40,4 +38,4 @@ class FileCycleStore(CycleStorePort):
         if not cycle_dirs:
             return None
 
-        return CycleDirParser.parse(cycle_dirs[0])
+        return str(cycle_dirs[0])

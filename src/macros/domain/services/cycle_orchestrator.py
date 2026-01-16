@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import Cycle, CycleStatus, StepRun
@@ -177,7 +178,7 @@ class CycleOrchestrator:
     ) -> Cycle:
         finished_at = datetime.now(timezone.utc) if status != CycleStatus.RUNNING else None
         return Cycle(
-            cycle_id=cycle_dir.split("/")[-1],
+            cycle_id=Path(cycle_dir).name,
             macro_id=macro.macro_id,
             engine=macro.engine,
             cycle_dir=cycle_dir,

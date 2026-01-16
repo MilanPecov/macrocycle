@@ -6,6 +6,7 @@ from typing import Annotated, Optional
 import typer
 
 from macros.application.container import Container
+from macros.application.presenters import format_status, format_preview
 from macros.application.usecases import (
     init_repo,
     list_macros,
@@ -44,7 +45,8 @@ def list_cmd() -> None:
     if not macros:
         container.console.warn("No macros found. Run: macrocycle init")
         raise typer.Exit(code=1)
-    container.console.print_list(macros)
+    for macro in macros:
+        container.console.echo(macro)
 
 
 @app.command()
@@ -54,7 +56,7 @@ def status() -> None:
     if not info:
         container.console.warn("No cycles found. Run: macrocycle run <macro> <input>")
         raise typer.Exit(code=1)
-    container.console.print_status(info)
+    container.console.echo(format_status(info))
 
 
 @app.command()
@@ -75,7 +77,7 @@ def run(
         except FileNotFoundError:
             container.console.warn(f"Macro not found: {macro_id}")
             raise typer.Exit(code=1)
-        container.console.print_preview(preview)
+        container.console.echo(format_preview(preview))
         raise typer.Exit()
 
     if not input_text:

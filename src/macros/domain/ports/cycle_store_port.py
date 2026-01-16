@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING, Protocol
-
-if TYPE_CHECKING:
-    from macros.domain.model import CycleInfo
+from typing import Protocol
 
 
 class CycleStorePort(Protocol):
-    """Port for cycle artifact storage and retrieval."""
+    """Port for cycle artifact storage."""
 
     def init_cycles_dir(self) -> None:
         """Ensure the cycles directory exists."""
@@ -19,6 +16,6 @@ class CycleStorePort(Protocol):
         """Write text content to a file within the cycle directory."""
         ...
 
-    def get_latest_cycle(self) -> "CycleInfo | None":
-        """Return info about the most recent cycle, or None if none exist."""
+    def get_latest_cycle_dir(self) -> str | None:
+        """Return path to the most recent cycle directory, or None if none exist."""
         ...
