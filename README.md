@@ -7,7 +7,7 @@ Ritualized AI agent workflows - multi-pass prompt pipelines for Cursor and beyon
 ## ⚡ Why Macros?
 
 - **Burn tokens, not time.** Let AI iterate through analysis, planning, and implementation while you context-switch.
-- **Scale horizontally.** Run 10 agents on 10 Sentry errors. Review the PRs over lunch.
+- **Scale horizontally.** Spawn parallel agents — 10 errors in, 10 PRs out.
 - **Artifacts you can audit.** Every cycle saves outputs to disk. Review before merging.
 
 ## 📦 Installation
@@ -26,6 +26,33 @@ macrocycle init
 
 git checkout -b fix/your-issue
 macrocycle run fix "Paste your error context here"
+```
+
+## 🔄 The Ritual
+
+The default `fix` macro runs your agent through a structured loop:
+
+```
+🔍 impact    Analyze the problem deeply
+     ↓
+📋 plan      Create a concrete fix plan
+     ↓
+❌ reject    Force refinement (no hand-waving!)
+     ↓
+✅ approve   Human gate: review & approve
+     ↓
+🔨 implement Execute the plan, write code
+     ↓
+🔬 review    Self-review for bugs & edge cases
+     ↓
+✨ simplify  Clean up, follow conventions
+     ↓
+🚀 PR        Ship it with a clear description
+```
+
+Use `--dry-run` to preview the prompts before running:
+```bash
+macrocycle run fix "your error" --dry-run
 ```
 
 ## 🔁 Orchestration
@@ -60,9 +87,9 @@ sentry-cli issues list -o "$SENTRY_ORG" -p "$SENTRY_PROJECT" --query "$QUERY" \
 wait
 ```
 
-Each agent runs the full ritual: impact → plan → reject → approve → implement → review → simplify → PR.
+Each agent runs the full ritual autonomously. Batch review the PRs when ready.
 
-The same pattern works with any issue tracker, log aggregator, or CI pipeline.
+Works with any issue tracker, log aggregator, or CI pipeline.
 
 ## 🛠 CLI Commands
 
@@ -73,6 +100,44 @@ macrocycle run <macro> <input>       # Run a macro
 macrocycle run fix "..." --yes       # Skip gate approvals
 macrocycle run fix "..." --until impact  # Stop after specific step
 ```
+
+## ✏️ Custom Macros
+
+Create your own workflows in `.macrocycle/macros/`:
+
+```json
+{
+  "macro_id": "review",
+  "name": "Code Review",
+  "engine": "cursor",
+  "include_previous_outputs": true,
+  "steps": [
+    {
+      "id": "analyze",
+      "type": "llm",
+      "prompt": "Analyze this code for issues:\n\n{{INPUT}}"
+    },
+    {
+      "id": "confirm",
+      "type": "gate",
+      "message": "Apply suggested fixes?"
+    },
+    {
+      "id": "fix",
+      "type": "llm", 
+      "prompt": "Apply the fixes identified above."
+    }
+  ]
+}
+```
+
+**Step types:**
+- `llm` — Send prompt to agent, save output
+- `gate` — Pause for human approval (skip with `--yes`)
+
+**Template variables:**
+- `{{INPUT}}` — User's original input
+- `{{STEP_OUTPUT:step_id}}` — Output from a previous step
 
 ## 📁 Artifacts
 
