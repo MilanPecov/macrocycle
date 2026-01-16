@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.1.2 (2026-01-15)
+
+### Feat
+
+- improve default workflow prompt
+- improve dry-run mode
+- add development docs
+- add --dry-run and --version
+- add --dry-run and --version
+
+### Fix
+
+- update readme
+- update readme
+- tests
+
 ## v0.1.1 (2026-01-15)
 
 ### Fix
