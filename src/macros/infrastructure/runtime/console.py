@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import typer
-from macros.application.usecases.get_status import CycleInfo
-from macros.application.usecases.preview_macro import MacroPreview
-from macros.domain.ports.console_port import ConsolePort
 from rich.console import Console
+
+from macros.domain.ports.console_port import ConsolePort
+
+if TYPE_CHECKING:
+    from macros.application.usecases.get_status import CycleInfo
+    from macros.application.usecases.preview_macro import MacroPreview
 
 
 class StdConsoleAdapter(ConsolePort):

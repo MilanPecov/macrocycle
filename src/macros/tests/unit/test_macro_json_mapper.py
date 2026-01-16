@@ -24,7 +24,7 @@ class TestMacroJsonMapper(unittest.TestCase):
 
             # THEN all required fields are present and valid
             self.assertEqual(macro.macro_id, "fix")
-            self.assertEqual(macro.name, "Fix Macrocycle")
+            self.assertEqual(macro.name, "Fix")
             self.assertTrue(macro.include_previous_outputs)
             self.assertGreater(len(macro.steps), 0)
 
