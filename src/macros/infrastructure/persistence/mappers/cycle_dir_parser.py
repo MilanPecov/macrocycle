@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from macros.application.dto import CycleInfo
+from macros.domain.model import CycleInfo
 
 
 class CycleDirParser:

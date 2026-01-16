@@ -4,8 +4,6 @@ from typing import List, Tuple
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import Cycle, CycleStatus
 from macros.domain.services.cycle_orchestrator import CycleOrchestrator
-from macros.domain.services.template_renderer import TemplateRenderer
-from macros.domain.services.prompt_builder import PromptBuilder
 from macros.domain.ports.agent_port import AgentPort
 from macros.domain.ports.cycle_store_port import CycleStorePort
 from macros.domain.ports.console_port import ConsolePort
@@ -38,6 +36,9 @@ class FakeCycleStore(CycleStorePort):
 
     def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:
         self.writes.append((cycle_dir, rel_path, content))
+
+    def get_latest_cycle(self):
+        return None
 
 
 class FakeConsole(ConsolePort):
@@ -78,7 +79,6 @@ class TestCycleOrchestrator(unittest.TestCase):
             agent=agent,
             cycle_store=store,
             console=console,
-            prompt_builder=PromptBuilder(TemplateRenderer()),
         )
 
     def test_successful_execution_completes_and_writes_output(self):

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from macros.application.dto import CycleInfo
+    from macros.domain.model import CycleInfo
 
 
 class CycleStorePort(Protocol):

@@ -6,6 +6,7 @@ from macros.domain.ports.agent_port import AgentPort
 from macros.domain.ports.cycle_store_port import CycleStorePort
 from macros.domain.ports.console_port import ConsolePort
 from macros.domain.services.prompt_builder import PromptBuilder
+from macros.domain.services.template_renderer import TemplateRenderer
 
 
 class CycleOrchestrator:
@@ -24,12 +25,11 @@ class CycleOrchestrator:
         agent: AgentPort,
         cycle_store: CycleStorePort,
         console: ConsolePort,
-        prompt_builder: PromptBuilder,
     ):
         self._agent = agent
         self._store = cycle_store
         self._console = console
-        self._prompt_builder = prompt_builder
+        self._prompt_builder = PromptBuilder(TemplateRenderer())
 
     # -------------------------------------------------------------------------
     # Main entry point

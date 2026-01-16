@@ -1,5 +1,5 @@
 from macros.application.container import Container
-from macros.application.dto import CycleInfo
+from macros.domain.model import CycleInfo
 
 
 def get_status(container: Container) -> CycleInfo | None:

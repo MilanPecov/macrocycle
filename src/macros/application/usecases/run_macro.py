@@ -18,7 +18,6 @@ def run_macro(
         agent=container.agent,
         cycle_store=container.cycle_store,
         console=container.console,
-        prompt_builder=container.prompt_builder,
     )
 
     return orchestrator.run(

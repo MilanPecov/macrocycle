@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 import secrets
 
-from macros.application.dto import CycleInfo
+from macros.domain.model import CycleInfo
 from macros.domain.ports.cycle_store_port import CycleStorePort
 from macros.infrastructure.persistence.mappers import CycleDirParser
 from macros.infrastructure.runtime.utils.workspace import get_workspace

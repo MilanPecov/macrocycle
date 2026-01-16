@@ -8,7 +8,7 @@ from rich.console import Console
 from macros.domain.ports.console_port import ConsolePort
 
 if TYPE_CHECKING:
-    from macros.application.dto import CycleInfo, MacroPreview
+    from macros.domain.model import CycleInfo, MacroPreview
 
 
 class StdConsoleAdapter(ConsolePort):
