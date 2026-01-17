@@ -1,10 +1,9 @@
 import unittest
-from datetime import datetime, timezone
 
 from macros.domain.model.macro import LlmStep
-from macros.domain.model.cycle import StepRun
 from macros.domain.services.prompt_builder import PromptBuilder
 from macros.domain.services.template_renderer import TemplateRenderer
+from macros.tests.helpers import make_step_run
 
 
 class TestPromptBuilder(unittest.TestCase):
@@ -18,16 +17,6 @@ class TestPromptBuilder(unittest.TestCase):
     def setUp(self):
         self.renderer = TemplateRenderer()
         self.builder = PromptBuilder(self.renderer)
-
-    def _make_step_run(self, step_id: str, output: str) -> StepRun:
-        return StepRun(
-            step_id=step_id,
-            started_at=datetime.now(timezone.utc),
-            finished_at=datetime.now(timezone.utc),
-            output_text=output,
-            engine="cursor",
-            exit_code=0,
-        )
 
     # -------------------------------------------------------------------------
     # Variable Substitution
@@ -49,8 +38,8 @@ class TestPromptBuilder(unittest.TestCase):
         self.assertEqual(result, "Process: Hello World")
 
     def test_substitutes_step_output_variable(self):
-        # GIVEN a previous step's output and a prompt referencing it
-        prev = self._make_step_run("analyze", "Analysis complete")
+        # GIVEN a previous step's output
+        prev = make_step_run("analyze", "Analysis complete")
         step = LlmStep(id="s2", prompt="Based on: {{STEP_OUTPUT:analyze}}")
 
         # WHEN building the prompt
@@ -85,7 +74,7 @@ class TestPromptBuilder(unittest.TestCase):
 
     def test_appends_previous_context_when_enabled(self):
         # GIVEN a previous step result and context enabled
-        prev = self._make_step_run("step1", "Output from step1")
+        prev = make_step_run("step1", "Output from step1")
         step = LlmStep(id="s2", prompt="Do something")
 
         # WHEN building the prompt with context enabled
@@ -104,7 +93,7 @@ class TestPromptBuilder(unittest.TestCase):
 
     def test_no_context_when_disabled(self):
         # GIVEN a previous step result but context disabled
-        prev = self._make_step_run("step1", "Output from step1")
+        prev = make_step_run("step1", "Output from step1")
         step = LlmStep(id="s2", prompt="Do something")
 
         # WHEN building the prompt with context disabled
@@ -135,8 +124,8 @@ class TestPromptBuilder(unittest.TestCase):
 
     def test_multiple_previous_outputs_all_included(self):
         # GIVEN multiple previous step results
-        prev1 = self._make_step_run("impact", "Impact analysis done")
-        prev2 = self._make_step_run("plan", "Plan created")
+        prev1 = make_step_run("impact", "Impact analysis done")
+        prev2 = make_step_run("plan", "Plan created")
         step = LlmStep(id="implement", prompt="Now implement")
 
         # WHEN building the prompt

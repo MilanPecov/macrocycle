@@ -1,17 +1,40 @@
-"""Shared test doubles for ports."""
+"""Fake implementations of ports for testing."""
+
+from datetime import datetime, timezone
+from pathlib import Path
 
 from macros.domain.model import CycleInfo
+from macros.domain.model.cycle import StepRun
 from macros.domain.ports.agent_port import AgentPort
 from macros.domain.ports.cycle_store_port import CycleStorePort
 from macros.domain.ports.console_port import ConsolePort
 
+
+# =============================================================================
+# Factories
+# =============================================================================
+
+def make_step_run(step_id: str, output: str, exit_code: int = 0) -> StepRun:
+    """Create a StepRun for testing with minimal boilerplate."""
+    return StepRun(
+        step_id=step_id,
+        started_at=datetime.now(timezone.utc),
+        finished_at=datetime.now(timezone.utc),
+        output_text=output,
+        engine="cursor",
+        exit_code=exit_code,
+    )
+
+
+# =============================================================================
+# Fakes
+# =============================================================================
 
 class FakeAgent(AgentPort):
     """Test double that returns canned responses.
     
     Can be configured with:
     - Fixed text/code for all calls (backward compatible)
-    - Step-specific outputs via step_outputs dict
     - Auto-incrementing output for context verification
     """
 

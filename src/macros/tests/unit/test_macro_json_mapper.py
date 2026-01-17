@@ -1,28 +1,16 @@
 import unittest
 import json
-import tempfile
-from pathlib import Path
 
 from macros.infrastructure.persistence import MacroJsonMapper
-from macros.infrastructure.runtime.utils.workspace import set_workspace
-
-
-# Sample valid macro JSON for testing
-SAMPLE_MACRO_JSON = json.dumps({
-    "macro_id": "test",
-    "name": "Test Macro",
-    "engine": "cursor",
-    "include_previous_outputs": True,
-    "steps": [
-        {"id": "s1", "type": "llm", "prompt": "Do something with {{INPUT}}"},
-        {"id": "g1", "type": "gate", "message": "Continue?"},
-        {"id": "s2", "type": "llm", "prompt": "Based on: {{STEP_OUTPUT:s1}}"},
-    ]
-})
+from macros.tests.helpers import SAMPLE_MACRO_JSON, SAMPLE_MACRO_DICT
 
 
 class TestMacroJsonMapper(unittest.TestCase):
     """Tests for JSON serialization/deserialization of Macro definitions."""
+
+    # -------------------------------------------------------------------------
+    # Parsing
+    # -------------------------------------------------------------------------
 
     def test_from_json_parses_valid_macro(self):
         # GIVEN valid macro JSON
@@ -30,11 +18,24 @@ class TestMacroJsonMapper(unittest.TestCase):
         macro = MacroJsonMapper.from_json(SAMPLE_MACRO_JSON)
 
         # THEN all fields are correctly populated
-        self.assertEqual(macro.macro_id, "test")
-        self.assertEqual(macro.name, "Test Macro")
+        self.assertEqual(macro.macro_id, "sample")
+        self.assertEqual(macro.name, "Sample Macro")
         self.assertEqual(macro.engine, "cursor")
         self.assertTrue(macro.include_previous_outputs)
         self.assertEqual(len(macro.steps), 3)
+
+    def test_from_dict_parses_dict(self):
+        # GIVEN macro data as dict
+        # WHEN parsing from dict
+        macro = MacroJsonMapper.from_dict(SAMPLE_MACRO_DICT)
+
+        # THEN macro is created correctly
+        self.assertEqual(macro.macro_id, "sample")
+        self.assertEqual(len(macro.steps), 3)
+
+    # -------------------------------------------------------------------------
+    # Serialization
+    # -------------------------------------------------------------------------
 
     def test_json_round_trip_preserves_data(self):
         # GIVEN a macro loaded from JSON
@@ -45,7 +46,7 @@ class TestMacroJsonMapper(unittest.TestCase):
         parsed = json.loads(dumped)
 
         # THEN key fields are preserved
-        self.assertEqual(parsed["macro_id"], "test")
+        self.assertEqual(parsed["macro_id"], "sample")
         self.assertEqual(parsed["engine"], "cursor")
         self.assertEqual(len(parsed["steps"]), 3)
 
@@ -58,15 +59,4 @@ class TestMacroJsonMapper(unittest.TestCase):
 
         # THEN result is a plain dict
         self.assertIsInstance(data, dict)
-        self.assertEqual(data["macro_id"], "test")
-
-    def test_from_dict_parses_dict(self):
-        # GIVEN macro data as dict
-        data = json.loads(SAMPLE_MACRO_JSON)
-
-        # WHEN parsing from dict
-        macro = MacroJsonMapper.from_dict(data)
-
-        # THEN macro is created correctly
-        self.assertEqual(macro.macro_id, "test")
-        self.assertEqual(len(macro.steps), 3)
+        self.assertEqual(data["macro_id"], "sample")

@@ -3,7 +3,7 @@ import unittest
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import CycleStatus
 from macros.domain.services.cycle_orchestrator import CycleOrchestrator
-from macros.tests.fakes import FakeAgent, FakeCycleStore, FakeConsole
+from macros.tests.helpers import FakeAgent, FakeCycleStore, FakeConsole
 
 
 class TestCycleOrchestrator(unittest.TestCase):
