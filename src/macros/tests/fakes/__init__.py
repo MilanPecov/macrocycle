@@ -7,15 +7,35 @@ from macros.domain.ports.console_port import ConsolePort
 
 
 class FakeAgent(AgentPort):
-    """Test double that returns canned responses."""
+    """Test double that returns canned responses.
+    
+    Can be configured with:
+    - Fixed text/code for all calls (backward compatible)
+    - Step-specific outputs via step_outputs dict
+    - Auto-incrementing output for context verification
+    """
 
-    def __init__(self, text: str = "OK", code: int = 0):
+    def __init__(
+        self,
+        text: str = "OK",
+        code: int = 0,
+        *,
+        auto_increment: bool = False,
+    ):
         self.text = text
         self.code = code
+        self.auto_increment = auto_increment
         self.prompts: list[str] = []
+        self.call_count = 0
 
     def run_prompt(self, prompt: str) -> tuple[int, str]:
         self.prompts.append(prompt)
+        self.call_count += 1
+        
+        if self.auto_increment:
+            # Return distinct output per call for context verification
+            return self.code, f"Output from step {self.call_count}"
+        
         return self.code, self.text
 
 
