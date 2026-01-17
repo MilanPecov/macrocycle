@@ -1,9 +1,10 @@
 from pathlib import Path
 from importlib import resources
-from typing import List
 
 from macros.domain.model.macro import Macro
 from macros.domain.ports.macro_registry_port import MacroRegistryPort
+from macros.domain.services.macro_validator import MacroValidator
+from macros.domain.exceptions import MacroNotFoundError
 from macros.infrastructure.persistence.mappers import MacroJsonMapper
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
@@ -21,6 +22,9 @@ class FileMacroStore(MacroRegistryPort):
     - Packaged defaults shipped with the library
     """
 
+    def __init__(self) -> None:
+        self._validator = MacroValidator()
+
     @property
     def _macro_dir(self) -> Path:
         return get_workspace() / ".macrocycle" / "macros"
@@ -37,19 +41,26 @@ class FileMacroStore(MacroRegistryPort):
         Preference order:
         1) Repo-local definition under `.macrocycle/macros/<id>.json`
         2) Packaged default (if available)
+        
+        Raises:
+            MacroNotFoundError: If macro not found
+            MacroValidationError: If macro definition is invalid
         """
         # Try repo-local first
         path = self._macro_dir / f"{macro_id}.json"
         if path.exists():
             text = path.read_text(encoding="utf-8")
-            return MacroJsonMapper.from_json(text)
+            macro = MacroJsonMapper.from_json(text)
+            self._validator.validate(macro)
+            return macro
 
         # Fallback to packaged defaults
         macro = self._load_packaged_default(macro_id)
         if macro is not None:
+            self._validator.validate(macro)
             return macro
 
-        raise FileNotFoundError(f"Macro not found: {macro_id}")
+        raise MacroNotFoundError(f"Macro not found: {macro_id}")
 
     def init_default_macros(self) -> None:
         """Seed repo with any packaged default macros that are missing.
@@ -70,7 +81,7 @@ class FileMacroStore(MacroRegistryPort):
     # Private: Packaged defaults loading
     # -------------------------------------------------------------------------
 
-    def _list_packaged_defaults(self) -> List[str]:
+    def _list_packaged_defaults(self) -> list[str]:
         """List all packaged default macro names."""
         base = resources.files(_DEFAULTS_PACKAGE)
         return sorted([

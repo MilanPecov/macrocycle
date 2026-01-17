@@ -58,7 +58,7 @@ Orchestrates domain and infrastructure to fulfill user intent. Use cases are del
 | Folder | Purpose |
 |--------|---------|
 | `usecases/` | `run_macro`, `init_repo`, `get_status`, `preview_macro`, `list_macros` |
-| `services/` | `PreviewBuilder` (builds preview DTOs), `CycleDirParser` (parses paths to info) |
+| `services/` | `PreviewBuilder` (builds preview DTOs) |
 | `presenters/` | Formatting for CLI output—keeps presentation concerns out of domain |
 | `container.py` | Wires infrastructure adapters. Domain services instantiate their own dependencies. |
 

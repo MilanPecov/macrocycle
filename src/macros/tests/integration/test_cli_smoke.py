@@ -1,25 +1,13 @@
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
 from macros.cli import app
 from macros.application.container import Container
-from macros.domain.ports.agent_port import AgentPort
 from macros.infrastructure.runtime.utils.workspace import set_workspace
-import macros.cli as cli_module
-
-
-class FakeAgent(AgentPort):
-    """Test double that returns canned responses."""
-
-    def __init__(self, text: str = "Hello from FakeAgent"):
-        self.text = text
-        self.calls: list[str] = []
-
-    def run_prompt(self, prompt: str) -> tuple[int, str]:
-        self.calls.append(prompt)
-        return 0, self.text
+from macros.tests.fakes import FakeAgent
 
 
 class TestCliEndToEnd(unittest.TestCase):
@@ -39,7 +27,6 @@ class TestCliEndToEnd(unittest.TestCase):
         with self.runner.isolated_filesystem():
             Path(".git").mkdir()
             set_workspace(Path.cwd())
-            cli_module.container = Container()
 
             # WHEN running 'macrocycle init'
             result = self.runner.invoke(app, ["init"])
@@ -56,16 +43,19 @@ class TestCliEndToEnd(unittest.TestCase):
             Path(".git").mkdir()
             set_workspace(Path.cwd())
 
-            container = Container()
-            container.agent = FakeAgent(text="Test output")
-            cli_module.container = container
+            # Create a container factory that injects fake agent
+            def make_test_container():
+                container = Container()
+                container.agent = FakeAgent(text="Test output")
+                return container
 
             self.runner.invoke(app, ["init"])
 
             # WHEN running a macro with --until to limit execution
-            result = self.runner.invoke(app, [
-                "run", "fix", "Test input", "--until", "impact"
-            ])
+            with patch("macros.cli.Container", make_test_container):
+                result = self.runner.invoke(app, [
+                    "run", "fix", "Test input", "--until", "impact"
+                ])
 
             # THEN it succeeds
             self.assertEqual(result.exit_code, 0, msg=result.output)

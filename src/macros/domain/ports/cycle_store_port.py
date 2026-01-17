@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from macros.domain.model import CycleInfo
+
 
 class CycleStorePort(Protocol):
     """Port for cycle artifact storage."""
@@ -16,6 +18,6 @@ class CycleStorePort(Protocol):
         """Write text content to a file within the cycle directory."""
         ...
 
-    def get_latest_cycle_dir(self) -> str | None:
-        """Return path to the most recent cycle directory, or None if none exist."""
+    def get_latest_cycle(self) -> CycleInfo | None:
+        """Return info about the most recent cycle, or None if none exist."""
         ...

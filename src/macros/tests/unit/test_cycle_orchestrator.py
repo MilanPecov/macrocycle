@@ -1,66 +1,10 @@
 import unittest
-from typing import List, Tuple
 
 from macros.domain.model.macro import Macro, LlmStep, GateStep
-from macros.domain.model.cycle import Cycle, CycleStatus
+from macros.domain.model.cycle import CycleStatus
 from macros.domain.services.cycle_orchestrator import CycleOrchestrator
-from macros.domain.ports.agent_port import AgentPort
-from macros.domain.ports.cycle_store_port import CycleStorePort
-from macros.domain.ports.console_port import ConsolePort
+from macros.tests.fakes import FakeAgent, FakeCycleStore, FakeConsole
 
-
-# =============================================================================
-# Test Doubles
-# =============================================================================
-
-class FakeAgent(AgentPort):
-    def __init__(self, text: str = "OK", code: int = 0):
-        self.text = text
-        self.code = code
-        self.prompts: List[str] = []
-
-    def run_prompt(self, prompt: str) -> tuple[int, str]:
-        self.prompts.append(prompt)
-        return self.code, self.text
-
-
-class FakeCycleStore(CycleStorePort):
-    def __init__(self):
-        self.writes: List[Tuple[str, str, str]] = []
-
-    def init_cycles_dir(self) -> None:
-        pass
-
-    def create_cycle_dir(self, macro_id: str) -> str:
-        return f"/tmp/.macrocycle/cycles/TEST_{macro_id}"
-
-    def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:
-        self.writes.append((cycle_dir, rel_path, content))
-
-    def get_latest_cycle_dir(self) -> str | None:
-        return None
-
-
-class FakeConsole(ConsolePort):
-    def __init__(self, approve: bool = True):
-        self._approve = approve
-
-    def info(self, msg: str) -> None:
-        pass
-
-    def warn(self, msg: str) -> None:
-        pass
-
-    def echo(self, msg: str) -> None:
-        pass
-
-    def confirm(self, msg: str, default: bool = True) -> bool:
-        return self._approve
-
-
-# =============================================================================
-# Tests
-# =============================================================================
 
 class TestCycleOrchestrator(unittest.TestCase):
     """Tests for CycleOrchestrator - the core macro execution engine.

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from macros.domain.model.macro import Macro
 
@@ -11,7 +11,7 @@ class MacroJsonMapper:
         return Macro.model_validate_json(text)
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> Macro:
+    def from_dict(data: dict[str, Any]) -> Macro:
         return Macro.model_validate(data)
 
     @staticmethod
@@ -19,5 +19,5 @@ class MacroJsonMapper:
         return macro.model_dump_json(indent=2)
 
     @staticmethod
-    def to_dict(macro: Macro) -> Dict[str, Any]:
+    def to_dict(macro: Macro) -> dict[str, Any]:
         return macro.model_dump()

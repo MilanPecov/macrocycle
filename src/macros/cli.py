@@ -14,11 +14,11 @@ from macros.application.usecases import (
     get_status,
     preview_macro,
 )
+from macros.domain.exceptions import MacroNotFoundError
 from macros.infrastructure.runtime.utils.input_resolver import resolve_input
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 app = typer.Typer(no_args_is_help=True)
-container = Container()
 
 
 @app.callback(invoke_without_command=True)
@@ -34,6 +34,7 @@ def main(
 @app.command()
 def init() -> None:
     """Initialize .macrocycle/ with default macros."""
+    container = Container()
     init_repo(container)
     container.console.info(f"Initialized macros in: {get_workspace()}/.macrocycle")
 
@@ -41,6 +42,7 @@ def init() -> None:
 @app.command(name="list")
 def list_cmd() -> None:
     """List available macros in this workspace."""
+    container = Container()
     macros = list_macros(container)
     if not macros:
         container.console.warn("No macros found. Run: macrocycle init")
@@ -52,6 +54,7 @@ def list_cmd() -> None:
 @app.command()
 def status() -> None:
     """Show the most recent cycle status."""
+    container = Container()
     info = get_status(container)
     if not info:
         container.console.warn("No cycles found. Run: macrocycle run <macro> <input>")
@@ -69,12 +72,13 @@ def run(
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview prompts without executing"),
 ) -> None:
     """Run a macro. Use --dry-run to preview steps first."""
+    container = Container()
     input_text = resolve_input(input_text, input_file)
 
     if dry_run:
         try:
             preview = preview_macro(container, macro_id, input_text)
-        except FileNotFoundError:
+        except MacroNotFoundError:
             container.console.warn(f"Macro not found: {macro_id}")
             raise typer.Exit(code=1)
         container.console.echo(format_preview(preview))
@@ -84,6 +88,11 @@ def run(
         container.console.warn("Provide input_text, --input-file, or pipe via stdin.")
         raise typer.Exit(code=2)
 
-    cycle = run_macro(container, macro_id, input_text, yes=yes, until=until)
+    try:
+        cycle = run_macro(container, macro_id, input_text, yes=yes, until=until)
+    except MacroNotFoundError:
+        container.console.warn(f"Macro not found: {macro_id}")
+        raise typer.Exit(code=1)
+
     container.console.info("Done.")
     container.console.info(f"Cycle dir: {cycle.cycle_dir}")

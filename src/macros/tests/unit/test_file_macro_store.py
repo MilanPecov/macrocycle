@@ -5,13 +5,14 @@ from pathlib import Path
 
 from macros.infrastructure.persistence import FileMacroStore
 from macros.infrastructure.runtime.utils.workspace import set_workspace
+from macros.domain.exceptions import MacroNotFoundError
 
 
 class TestFileMacroStore(unittest.TestCase):
     """Tests for FileMacroStore - the macro persistence layer.
     
     Key invariants:
-    - Unknown macro IDs raise FileNotFoundError
+    - Unknown macro IDs raise MacroNotFoundError
     - Local macros take precedence over packaged defaults
     - list_macros returns empty when no macros exist
     """
@@ -25,11 +26,11 @@ class TestFileMacroStore(unittest.TestCase):
         set_workspace(None)
         self.tmp.cleanup()
 
-    def test_load_nonexistent_macro_raises_file_not_found(self):
+    def test_load_nonexistent_macro_raises_macro_not_found(self):
         # GIVEN an empty workspace with no macros
         # WHEN loading a macro that doesn't exist
-        # THEN FileNotFoundError is raised
-        with self.assertRaises(FileNotFoundError) as ctx:
+        # THEN MacroNotFoundError is raised
+        with self.assertRaises(MacroNotFoundError) as ctx:
             self.store.load_macro("does_not_exist")
         
         self.assertIn("does_not_exist", str(ctx.exception))

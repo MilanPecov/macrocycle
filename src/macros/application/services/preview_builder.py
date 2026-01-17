@@ -1,18 +1,23 @@
-import re
-
 from macros.domain.model import MacroPreview, StepPreview
 from macros.domain.model.macro import Macro, LlmStep, GateStep
+from macros.domain.services.template_renderer import TemplateRenderer
 
 
 class PreviewBuilder:
     """Builds macro previews with rendered prompt templates."""
 
+    def __init__(self) -> None:
+        self._renderer = TemplateRenderer()
+
     def build(self, macro: Macro, input_text: str | None = None) -> MacroPreview:
         """Build a preview of a macro with rendered prompts."""
+        # Build variables for template rendering
+        variables = self._build_preview_variables(macro, input_text)
+
         steps = []
         for idx, step in enumerate(macro.steps, start=1):
             if isinstance(step, LlmStep):
-                content = self._render_prompt(step.prompt, input_text)
+                content = self._renderer.render(step.prompt, variables)
                 steps.append(StepPreview(
                     index=idx,
                     step_id=step.id,
@@ -34,19 +39,18 @@ class PreviewBuilder:
             include_previous_context=macro.include_previous_outputs,
         )
 
-    def _render_prompt(self, template: str, input_text: str | None) -> str:
-        """Render a prompt template for preview with placeholders."""
-        result = template
+    def _build_preview_variables(self, macro: Macro, input_text: str | None) -> dict[str, str]:
+        """Build template variables with placeholders for preview."""
+        variables: dict[str, str] = {}
 
+        # Input placeholder
         if input_text:
-            result = result.replace("{{INPUT}}", input_text)
+            variables["INPUT"] = input_text
         else:
-            result = result.replace("{{INPUT}}", "[← your input will appear here]")
+            variables["INPUT"] = "[← your input will appear here]"
 
-        def replace_step_ref(match: re.Match) -> str:
-            step_id = match.group(1)
-            return f"[← output from: {step_id}]"
+        # Step output placeholders
+        for step in macro.steps:
+            variables[f"STEP_OUTPUT:{step.id}"] = f"[← output from: {step.id}]"
 
-        result = re.sub(r"\{\{STEP_OUTPUT:(\w+)\}\}", replace_step_ref, result)
-
-        return result
+        return variables

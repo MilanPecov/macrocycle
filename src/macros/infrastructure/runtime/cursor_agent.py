@@ -13,19 +13,28 @@ class CursorAgentAdapter(AgentPort):
 
     Cursor docs show using headless automation like:
       agent -p --force --output-format text "..."
-    and that output format is controllable via --output-format (works with --print).
     """
 
-    def __init__(self, console: ConsolePort) -> None:
+    def __init__(
+        self,
+        console: ConsolePort,
+        binary: str = "agent",
+        extra_args: list[str] | None = None,
+        timeout: int = TIMEOUT_SECONDS,
+    ) -> None:
         self._console = console
+        self._binary = binary
+        self._extra_args = extra_args or []
+        self._timeout = timeout
 
     def run_prompt(self, prompt: str) -> tuple[int, str]:
         cmd = [
-            "agent",
+            self._binary,
             "--print",
             "--force",
             "--output-format",
             "text",
+            *self._extra_args,
             prompt,
         ]
 
@@ -36,12 +45,11 @@ class CursorAgentAdapter(AgentPort):
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=TIMEOUT_SECONDS,
+                timeout=self._timeout,
             )
             out = (proc.stdout or "").strip()
             return proc.returncode, out
         except FileNotFoundError:
-            # agent binary not on PATH
-            return 127, "Cursor agent CLI not found. Ensure 'agent' is on PATH."
+            return 127, f"Agent binary '{self._binary}' not found. Ensure it's on PATH."
         except subprocess.TimeoutExpired:
-            return 124, "Cursor agent timed out executing prompt."
+            return 124, f"Agent timed out after {self._timeout}s."
