@@ -1,0 +1,29 @@
+{% extends "base.jinja2" %}
+
+{% block after_description %}
+{% if extras.culprit %}
+**Culprit:** {{ extras.culprit }}
+{% endif %}
+{% if extras.event_count %}
+**Events:** {{ extras.event_count }}{% if extras.user_count %} ({{ extras.user_count }} users affected){% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block after_stacktrace %}
+{% if extras.request %}
+### Request Context
+
+**{{ extras.request.method | default("GET") }}** {{ extras.request.url }}
+{% if extras.request.headers %}
+Headers: {{ extras.request.headers | tojson }}
+{% endif %}
+
+{% endif %}
+{% if extras.tags %}
+### Environment Tags
+{% for key, value in extras.tags.items() %}
+- {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
+{% endblock %}

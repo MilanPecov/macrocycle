@@ -1,6 +1,8 @@
-from enum import Enum
+"""Cycle aggregate - execution state for a macro run."""
+
+from dataclasses import dataclass, field
 from datetime import datetime
-from pydantic import BaseModel
+from enum import Enum
 
 
 class CycleStatus(str, Enum):
@@ -11,8 +13,9 @@ class CycleStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class StepRun(BaseModel):
-    """Result of executing a single step."""
+@dataclass(frozen=True)
+class StepRun:
+    """Immutable record of executing a single step."""
     step_id: str
     started_at: datetime
     finished_at: datetime
@@ -21,7 +24,8 @@ class StepRun(BaseModel):
     exit_code: int = 0
 
 
-class Cycle(BaseModel):
+@dataclass
+class Cycle:
     """A running or completed macro execution.
     
     This is the aggregate root for cycle execution state.
@@ -31,7 +35,7 @@ class Cycle(BaseModel):
     engine: str
     cycle_dir: str
     status: CycleStatus
-    failure_reason: str | None = None
     started_at: datetime
+    failure_reason: str | None = None
     finished_at: datetime | None = None
-    results: list[StepRun] = []
+    results: list[StepRun] = field(default_factory=list)

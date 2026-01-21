@@ -1,3 +1,5 @@
+"""File-based cycle artifact storage."""
+
 from datetime import datetime
 from pathlib import Path
 import secrets
@@ -21,14 +23,19 @@ class FileCycleStore(CycleStorePort):
     def init_cycles_dir(self) -> None:
         self._cycles_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_cycle_dir(self, macro_id: str) -> str:
+    def create_cycle_dir(self, macro_id: str) -> tuple[str, str]:
+        """Create a new cycle directory.
+        
+        Returns:
+            Tuple of (cycle_id, cycle_dir_path)
+        """
         ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         suffix = secrets.token_hex(3)
         cycle_id = f"{ts}_{macro_id}_{suffix}"
 
         cycle_dir = self._cycles_dir / cycle_id
         (cycle_dir / "steps").mkdir(parents=True, exist_ok=True)
-        return str(cycle_dir)
+        return cycle_id, str(cycle_dir)
 
     def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:
         p = Path(cycle_dir) / rel_path

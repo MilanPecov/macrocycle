@@ -1,5 +1,8 @@
+"""Run a macro cycle."""
+
 from macros.domain.model.cycle import Cycle
 from macros.domain.services.cycle_orchestrator import CycleOrchestrator
+from macros.domain.services.macro_validator import MacroValidator
 from macros.application.container import Container
 
 
@@ -13,6 +16,7 @@ def run_macro(
 ) -> Cycle:
     """Execute a macro and return the cycle."""
     macro = container.macro_registry.load_macro(macro_id)
+    MacroValidator().validate(macro)
 
     orchestrator = CycleOrchestrator(
         agent=container.agent,

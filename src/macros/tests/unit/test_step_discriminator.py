@@ -1,20 +1,21 @@
+"""Tests for Step discriminated union parsing via MacroJsonMapper.
+
+Critical invariant: The 'type' field determines which Step subclass is created.
+This is essential for the orchestrator to handle steps correctly.
+"""
+
 import unittest
 
-from pydantic import ValidationError
-
-from macros.domain.model.macro import Macro, LlmStep, GateStep
+from macros.domain.model.macro import LlmStep, GateStep
+from macros.infrastructure.persistence.mappers import MacroJsonMapper
 
 
 class TestStepDiscriminator(unittest.TestCase):
-    """Tests for Step discriminated union parsing.
-    
-    Critical invariant: The 'type' field determines which Step subclass is created.
-    This is essential for the orchestrator to handle steps correctly.
-    """
+    """Tests for Step type discrimination during JSON parsing."""
 
     def test_type_llm_creates_llm_step(self):
         # GIVEN JSON with type="llm"
-        macro = Macro.model_validate({
+        macro = MacroJsonMapper.from_dict({
             "macro_id": "test",
             "name": "Test",
             "steps": [{"id": "s1", "type": "llm", "prompt": "Do something"}]
@@ -26,7 +27,7 @@ class TestStepDiscriminator(unittest.TestCase):
 
     def test_type_gate_creates_gate_step(self):
         # GIVEN JSON with type="gate"
-        macro = Macro.model_validate({
+        macro = MacroJsonMapper.from_dict({
             "macro_id": "test",
             "name": "Test",
             "steps": [{"id": "g1", "type": "gate", "message": "Continue?"}]
@@ -38,7 +39,7 @@ class TestStepDiscriminator(unittest.TestCase):
 
     def test_mixed_step_types_parsed_correctly(self):
         # GIVEN JSON with mixed step types
-        macro = Macro.model_validate({
+        macro = MacroJsonMapper.from_dict({
             "macro_id": "test",
             "name": "Test",
             "steps": [
@@ -53,23 +54,23 @@ class TestStepDiscriminator(unittest.TestCase):
         self.assertIsInstance(macro.steps[1], GateStep)
         self.assertIsInstance(macro.steps[2], LlmStep)
 
-    def test_unknown_step_type_raises_validation_error(self):
-        # GIVEN JSON with invalid type
+    def test_unknown_step_type_defaults_to_llm(self):
+        # GIVEN JSON with unknown type but has prompt field
         # WHEN parsing
-        # THEN ValidationError is raised
-        with self.assertRaises(ValidationError):
-            Macro.model_validate({
-                "macro_id": "test",
-                "name": "Test",
-                "steps": [{"id": "s1", "type": "unknown", "prompt": "X"}]
-            })
+        # THEN it defaults to LlmStep (graceful handling)
+        macro = MacroJsonMapper.from_dict({
+            "macro_id": "test",
+            "name": "Test",
+            "steps": [{"id": "s1", "type": "unknown", "prompt": "X"}]
+        })
+        self.assertIsInstance(macro.steps[0], LlmStep)
 
-    def test_llm_step_requires_prompt(self):
+    def test_llm_step_missing_prompt_raises_key_error(self):
         # GIVEN an LLM step without prompt
         # WHEN parsing
-        # THEN ValidationError is raised
-        with self.assertRaises(ValidationError):
-            Macro.model_validate({
+        # THEN KeyError is raised
+        with self.assertRaises(KeyError):
+            MacroJsonMapper.from_dict({
                 "macro_id": "test",
                 "name": "Test",
                 "steps": [{"id": "s1", "type": "llm"}]  # missing prompt
@@ -77,7 +78,7 @@ class TestStepDiscriminator(unittest.TestCase):
 
     def test_gate_step_has_default_message(self):
         # GIVEN a gate step without message
-        macro = Macro.model_validate({
+        macro = MacroJsonMapper.from_dict({
             "macro_id": "test",
             "name": "Test",
             "steps": [{"id": "g1", "type": "gate"}]  # no message

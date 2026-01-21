@@ -1,7 +1,6 @@
 """Fake implementations of ports for testing."""
 
 from datetime import datetime, timezone
-from pathlib import Path
 
 from macros.domain.model import CycleInfo
 from macros.domain.model.cycle import StepRun
@@ -56,7 +55,6 @@ class FakeAgent(AgentPort):
         self.call_count += 1
         
         if self.auto_increment:
-            # Return distinct output per call for context verification
             return self.code, f"Output from step {self.call_count}"
         
         return self.code, self.text
@@ -71,8 +69,10 @@ class FakeCycleStore(CycleStorePort):
     def init_cycles_dir(self) -> None:
         pass
 
-    def create_cycle_dir(self, macro_id: str) -> str:
-        return f"/tmp/.macrocycle/cycles/TEST_{macro_id}"
+    def create_cycle_dir(self, macro_id: str) -> tuple[str, str]:
+        cycle_id = f"TEST_{macro_id}"
+        cycle_dir = f"/tmp/.macrocycle/cycles/{cycle_id}"
+        return cycle_id, cycle_dir
 
     def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:
         self.writes.append((cycle_dir, rel_path, content))

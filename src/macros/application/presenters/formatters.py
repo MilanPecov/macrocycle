@@ -1,6 +1,7 @@
 """Formatting functions for CLI presentation."""
 
-from macros.domain.model import CycleInfo, MacroPreview
+from typing import Callable
+from macros.domain.model import CycleInfo, MacroPreview, WorkItem
 
 
 def format_status(info: CycleInfo) -> str:
@@ -26,4 +27,49 @@ def format_preview(preview: MacroPreview) -> str:
         lines.append(step.content)
 
     lines.append(f"\n{sep}\n")
+    return "\n".join(lines)
+
+
+def format_work_items_table(items: list[WorkItem]) -> str:
+    """Format work items as table. Works for any source."""
+    if not items:
+        return "No work items found."
+
+    id_w = max(len(i.id) for i in items)
+    src_w = max(len(i.source) for i in items)
+    kind_w = max(len(i.kind.value) for i in items)
+
+    lines = [
+        f"{'ID':<{id_w}}  {'SOURCE':<{src_w}}  {'KIND':<{kind_w}}  {'STATUS':<12}  TITLE",
+        "-" * (id_w + src_w + kind_w + 60),
+    ]
+
+    for i in items:
+        title = i.title[:45] + "..." if len(i.title) > 45 else i.title
+        lines.append(
+            f"{i.id:<{id_w}}  {i.source:<{src_w}}  {i.kind.value:<{kind_w}}  {i.status.value:<12}  {title}"
+        )
+
+    return "\n".join(lines)
+
+
+def format_sources_status(
+    available: list[str],
+    configured: list[str],
+    get_missing: Callable[[str], list[str]],
+) -> str:
+    """Format source availability status for display."""
+    if not available:
+        return "No sources available."
+
+    lines = ["Available sources:"]
+    for source in available:
+        if source in configured:
+            status = "✓ configured"
+        else:
+            missing = get_missing(source)
+            hint = f" (set: {', '.join(missing)})" if missing else ""
+            status = f"✗ not configured{hint}"
+        lines.append(f"  {source}: {status}")
+
     return "\n".join(lines)

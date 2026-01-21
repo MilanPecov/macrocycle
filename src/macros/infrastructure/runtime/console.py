@@ -1,3 +1,5 @@
+"""Console I/O adapter using Rich and Typer."""
+
 import typer
 from rich.console import Console
 

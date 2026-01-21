@@ -1,9 +1,11 @@
+"""Port for macro registry operations."""
+
 from typing import Protocol
 from macros.domain.model.macro import Macro
 
 
 class MacroRegistryPort(Protocol):
-    """Port for loading and managing macro definitions."""
+    """Contract for loading and managing macro definitions."""
 
     def list_macros(self) -> list[str]:
         """List all available macro IDs."""
