@@ -1,29 +1,24 @@
+"""File-based macro storage."""
+
 from pathlib import Path
 from importlib import resources
 
 from macros.domain.model.macro import Macro
 from macros.domain.ports.macro_registry_port import MacroRegistryPort
-from macros.domain.services.macro_validator import MacroValidator
 from macros.domain.exceptions import MacroNotFoundError
 from macros.infrastructure.persistence.mappers import MacroJsonMapper
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
-# Package path for packaged default macros
 _DEFAULTS_PACKAGE = "macros.infrastructure.persistence.defaults"
 
 
 class FileMacroStore(MacroRegistryPort):
     """Loads macros from repo-local files or packaged defaults.
 
-    This is the single source of truth for macro persistence.
-    It handles both:
-    - Repo-local macros from `.macrocycle/macros/`
-    - Packaged defaults shipped with the library
+    This adapter handles IO only - validation is a domain concern
+    handled by use cases via MacroValidator.
     """
-
-    def __init__(self) -> None:
-        self._validator = MacroValidator()
 
     @property
     def _macro_dir(self) -> Path:
@@ -44,30 +39,22 @@ class FileMacroStore(MacroRegistryPort):
         
         Raises:
             MacroNotFoundError: If macro not found
-            MacroValidationError: If macro definition is invalid
         """
         # Try repo-local first
         path = self._macro_dir / f"{macro_id}.json"
         if path.exists():
             text = path.read_text(encoding="utf-8")
-            macro = MacroJsonMapper.from_json(text)
-            self._validator.validate(macro)
-            return macro
+            return MacroJsonMapper.from_json(text)
 
         # Fallback to packaged defaults
         macro = self._load_packaged_default(macro_id)
         if macro is not None:
-            self._validator.validate(macro)
             return macro
 
         raise MacroNotFoundError(f"Macro not found: {macro_id}")
 
     def init_default_macros(self) -> None:
-        """Seed repo with any packaged default macros that are missing.
-
-        This copies JSON definitions from the packaged defaults into
-        `.macrocycle/macros/` without overwriting existing files.
-        """
+        """Seed repo with any packaged default macros that are missing."""
         self._macro_dir.mkdir(parents=True, exist_ok=True)
 
         for name in self._list_packaged_defaults():
@@ -76,10 +63,6 @@ class FileMacroStore(MacroRegistryPort):
                 text = self._load_packaged_default_text(name)
                 if text:
                     target.write_text(text, encoding="utf-8")
-
-    # -------------------------------------------------------------------------
-    # Private: Packaged defaults loading
-    # -------------------------------------------------------------------------
 
     def _list_packaged_defaults(self) -> list[str]:
         """List all packaged default macro names."""

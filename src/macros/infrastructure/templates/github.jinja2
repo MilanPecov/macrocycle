@@ -1,0 +1,20 @@
+{% extends "base.jinja2" %}
+
+{% block after_header %}
+{% if extras.milestone %}
+**Milestone:** {{ extras.milestone }}
+{% endif %}
+{% if extras.reactions %}
+{% set total_reactions = extras.reactions.get('total_count', 0) %}
+{% if total_reactions > 0 %}
+**Reactions:** {{ total_reactions }} (👍 {{ extras.reactions.get('+1', 0) }}, 👎 {{ extras.reactions.get('-1', 0) }})
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block footer %}
+{% if comments %}
+---
+*This issue has {{ comments | length }} comment(s). See the full discussion at {{ item.url }}*
+{% endif %}
+{% endblock %}

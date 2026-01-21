@@ -1,0 +1,61 @@
+## {{ item.kind | kind_label }}: {{ item.title }}
+
+**Source:** {{ item.source }}
+**ID:** {{ item.id }}
+**Status:** {{ item.status.value }} {{ item.status | status_emoji }}
+**URL:** {{ item.url }}
+**Created:** {{ item.created_at.strftime("%Y-%m-%d %H:%M") }}
+**Updated:** {{ item.updated_at.strftime("%Y-%m-%d %H:%M") }}
+{% if project %}
+**Project:** {{ project }}
+{% endif %}
+{% if priority %}
+**Priority:** {{ priority }}
+{% endif %}
+{% if labels %}
+**Labels:** {{ labels | join(", ") }}
+{% endif %}
+{% if assignees %}
+**Assignees:** {{ assignees | join(", ") }}
+{% endif %}
+
+{% block after_header %}{% endblock %}
+
+{% if description %}
+### Description
+
+{{ description }}
+{% endif %}
+
+{% block after_description %}{% endblock %}
+
+{% if has_stacktrace %}
+### Stacktrace
+
+{% for frame in stacktrace %}
+File "{{ frame.filename }}", line {{ frame.lineno }}, in {{ frame.function }}
+{% if frame.code %}    {{ frame.code | trim }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% block after_stacktrace %}{% endblock %}
+
+{% if has_comments %}
+### Discussion ({{ comments | length }} comments)
+
+{% for c in comments %}
+**{{ c.author }}** ({{ c.created_at.strftime("%Y-%m-%d") }}):
+{{ c.body }}
+
+{% endfor %}
+{% endif %}
+
+{% if linked_items %}
+### Related Items
+{% for li in linked_items %}
+- [{{ li.kind }}] {{ li.title }} ({{ li.url }})
+{% endfor %}
+{% endif %}
+
+{% block footer %}{% endblock %}

@@ -1,3 +1,5 @@
+"""Port for cycle artifact storage."""
+
 from typing import Protocol
 
 from macros.domain.model import CycleInfo
@@ -10,8 +12,12 @@ class CycleStorePort(Protocol):
         """Ensure the cycles directory exists."""
         ...
 
-    def create_cycle_dir(self, macro_id: str) -> str:
-        """Create a new cycle directory and return its path."""
+    def create_cycle_dir(self, macro_id: str) -> tuple[str, str]:
+        """Create a new cycle directory.
+        
+        Returns:
+            Tuple of (cycle_id, cycle_dir_path)
+        """
         ...
 
     def write_text(self, cycle_dir: str, rel_path: str, content: str) -> None:

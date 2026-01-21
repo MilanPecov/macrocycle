@@ -1,8 +1,10 @@
+"""Port for console user interaction."""
+
 from typing import Protocol
 
 
 class ConsolePort(Protocol):
-    """Port for console output operations."""
+    """Contract for console output and user interaction."""
 
     def info(self, msg: str) -> None: ...
     def warn(self, msg: str) -> None: ...

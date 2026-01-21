@@ -1,3 +1,5 @@
+"""Initialize macrocycle in a workspace."""
+
 from macros.application.container import Container
 
 

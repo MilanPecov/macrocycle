@@ -1,3 +1,5 @@
+"""Build macro previews for --dry-run."""
+
 from macros.domain.model import MacroPreview, StepPreview
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.services.template_renderer import TemplateRenderer
@@ -11,7 +13,6 @@ class PreviewBuilder:
 
     def build(self, macro: Macro, input_text: str | None = None) -> MacroPreview:
         """Build a preview of a macro with rendered prompts."""
-        # Build variables for template rendering
         variables = self._build_preview_variables(macro, input_text)
 
         steps = []
@@ -35,7 +36,7 @@ class PreviewBuilder:
         return MacroPreview(
             name=macro.name,
             engine=macro.engine,
-            steps=steps,
+            steps=tuple(steps),
             include_previous_context=macro.include_previous_outputs,
         )
 
@@ -43,13 +44,11 @@ class PreviewBuilder:
         """Build template variables with placeholders for preview."""
         variables: dict[str, str] = {}
 
-        # Input placeholder
         if input_text:
             variables["INPUT"] = input_text
         else:
             variables["INPUT"] = "[← your input will appear here]"
 
-        # Step output placeholders
         for step in macro.steps:
             variables[f"STEP_OUTPUT:{step.id}"] = f"[← output from: {step.id}]"
 

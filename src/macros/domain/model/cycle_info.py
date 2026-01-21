@@ -1,10 +1,15 @@
+"""Cycle summary information (read model)."""
+
 from dataclasses import dataclass
 from datetime import datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class CycleInfo:
-    """Summary information about a cycle (read model)."""
+    """Summary information about a cycle (read model).
+    
+    Immutable snapshot returned by CycleStorePort.get_latest_cycle().
+    """
     cycle_id: str
     macro_id: str
     started_at: datetime

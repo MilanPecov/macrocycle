@@ -1,22 +1,34 @@
 """CLI entry point - thin orchestration layer."""
 
 from importlib.metadata import version as pkg_version
+from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 
 from macros.application.container import Container
-from macros.application.presenters import format_status, format_preview
+from macros.application.presenters import (
+    format_status,
+    format_preview,
+    format_work_items_table,
+    format_sources_status,
+)
 from macros.application.usecases import (
     init_repo,
     list_macros,
     run_macro,
     get_status,
     preview_macro,
+    discover_work_items,
+    fix_work_item,
 )
-from macros.domain.exceptions import MacroNotFoundError
-from macros.infrastructure.runtime.utils.input_resolver import resolve_input
-from macros.infrastructure.runtime.utils.workspace import get_workspace
+from macros.domain.exceptions import (
+    MacroNotFoundError,
+    SourceNotFoundError,
+    SourceNotConfiguredError,
+    WorkItemNotFoundError,
+)
+from macros.infrastructure.runtime import resolve_input
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -36,7 +48,7 @@ def init() -> None:
     """Initialize .macrocycle/ with default macros."""
     container = Container()
     init_repo(container)
-    container.console.info(f"Initialized macros in: {get_workspace()}/.macrocycle")
+    container.console.info(f"Initialized macros in: {Path.cwd() / '.macrocycle'}")
 
 
 @app.command(name="list")
@@ -73,26 +85,87 @@ def run(
 ) -> None:
     """Run a macro. Use --dry-run to preview steps first."""
     container = Container()
-    input_text = resolve_input(input_text, input_file)
+    resolved = resolve_input(input_text, input_file)
 
     if dry_run:
         try:
-            preview = preview_macro(container, macro_id, input_text)
+            preview = preview_macro(container, macro_id, resolved)
         except MacroNotFoundError:
             container.console.warn(f"Macro not found: {macro_id}")
             raise typer.Exit(code=1)
         container.console.echo(format_preview(preview))
         raise typer.Exit()
 
-    if not input_text:
+    if not resolved:
         container.console.warn("Provide input_text, --input-file, or pipe via stdin.")
         raise typer.Exit(code=2)
 
     try:
-        cycle = run_macro(container, macro_id, input_text, yes=yes, until=until)
+        cycle = run_macro(container, macro_id, resolved, yes=yes, until=until)
     except MacroNotFoundError:
         container.console.warn(f"Macro not found: {macro_id}")
         raise typer.Exit(code=1)
 
     container.console.info("Done.")
     container.console.info(f"Cycle dir: {cycle.cycle_dir}")
+
+
+# Work item subcommands
+
+work_app = typer.Typer(no_args_is_help=True)
+app.add_typer(work_app, name="work", help="Work with external issue sources.")
+
+
+@work_app.command(name="list")
+def work_list_cmd(
+    query: Annotated[str, typer.Option("--query", "-q", help="Source-specific query")] = "",
+    limit: Annotated[int, typer.Option("--limit", "-n", help="Max results")] = 10,
+    source: Annotated[str, typer.Option("--source", "-s", help="Source: sentry, github")] = "sentry",
+) -> None:
+    """List work items from an external source."""
+    container = Container()
+    actual_query = query or container.source_registry.get_default_query(source)
+
+    try:
+        items = discover_work_items(container, source, actual_query, limit)
+    except (SourceNotFoundError, SourceNotConfiguredError) as e:
+        container.console.warn(str(e))
+        raise typer.Exit(code=1)
+
+    container.console.echo(format_work_items_table(items))
+
+
+@work_app.command(name="fix")
+def work_fix_cmd(
+    item_id: Annotated[str, typer.Argument(help="Work item ID from the source")],
+    source: Annotated[str, typer.Option("--source", "-s", help="Source: sentry, github")] = "sentry",
+    macro: Annotated[Optional[str], typer.Option("--macro", "-m", help="Override suggested macro")] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="Skip gate approvals")] = False,
+    until: Annotated[Optional[str], typer.Option("--until", help="Stop after step")] = None,
+) -> None:
+    """Fetch work item context and run fix macro."""
+    container = Container()
+
+    try:
+        cycle = fix_work_item(container, source, item_id, macro_id=macro, yes=yes, until=until)
+    except (SourceNotFoundError, SourceNotConfiguredError, WorkItemNotFoundError) as e:
+        container.console.warn(str(e))
+        raise typer.Exit(code=1)
+    except MacroNotFoundError as e:
+        container.console.warn(f"Macro not found: {e}")
+        raise typer.Exit(code=1)
+
+    container.console.info("Done.")
+    container.console.info(f"Cycle dir: {cycle.cycle_dir}")
+
+
+@work_app.command(name="sources")
+def work_sources_cmd() -> None:
+    """List available and configured work item sources."""
+    container = Container()
+    output = format_sources_status(
+        available=container.source_registry.list_sources(),
+        configured=container.source_config.list_configured_sources(),
+        get_missing=container.source_config.get_missing_credentials,
+    )
+    container.console.echo(output)

@@ -1,33 +1,39 @@
-from typing import Literal, Annotated, Union
-from pydantic import BaseModel, Field
+"""Macro aggregate - workflow definition."""
+
+from dataclasses import dataclass, field
+from typing import Literal
 
 
-class StepBase(BaseModel):
-    """Base for all step types."""
-    id: str = Field(min_length=1)
-
-
-class LlmStep(StepBase):
+@dataclass(frozen=True)
+class LlmStep:
     """Execute a prompt via AI agent."""
-    type: Literal["llm"] = "llm"
-    prompt: str = Field(min_length=1)
+    id: str
+    prompt: str
+    type: Literal["llm"] = field(default="llm", repr=False)
 
 
-class GateStep(StepBase):
+@dataclass(frozen=True)
+class GateStep:
     """Pause for human approval."""
-    type: Literal["gate"] = "gate"
-    message: str = Field(default="Continue?")
+    id: str
+    message: str = "Continue?"
+    type: Literal["gate"] = field(default="gate", repr=False)
 
 
-# Discriminated union - Pydantic auto-selects by 'type' field
-Step = Annotated[Union[LlmStep, GateStep], Field(discriminator="type")]
+# Discriminated union - type field distinguishes variants
+Step = LlmStep | GateStep
 
 
-class Macro(BaseModel):
-    """A reusable workflow definition."""
-    macro_id: str = Field(min_length=1)    # stable identifier (filenames, CLI)
-    name: str = Field(min_length=1)        # human-friendly display name
-    engine: str = Field(default="cursor")  # "cursor" now, "claude_code" later
-    mode: str = Field(default="auto")      # for future expansion
+@dataclass(frozen=True)
+class Macro:
+    """A reusable workflow definition.
+    
+    This is the aggregate root for workflow definitions.
+    Immutable once loaded.
+    """
+    macro_id: str
+    name: str
+    steps: tuple[Step, ...]  # Immutable sequence
+    engine: str = "cursor"
+    mode: str = "auto"
     include_previous_outputs: bool = True
-    steps: list[Step]

@@ -1,6 +1,7 @@
+"""Tests for FileMacroStore - macro persistence layer."""
+
 import unittest
 import tempfile
-import json
 from pathlib import Path
 
 from macros.infrastructure.persistence import FileMacroStore

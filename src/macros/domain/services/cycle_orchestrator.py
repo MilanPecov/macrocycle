@@ -1,5 +1,6 @@
+"""Cycle orchestration - the heart of macro execution."""
+
 from datetime import datetime, timezone
-from pathlib import Path
 
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import Cycle, CycleStatus, StepRun
@@ -32,10 +33,6 @@ class CycleOrchestrator:
         self._console = console
         self._prompt_builder = PromptBuilder(TemplateRenderer())
 
-    # -------------------------------------------------------------------------
-    # Main entry point
-    # -------------------------------------------------------------------------
-
     def run(
         self,
         macro: Macro,
@@ -52,9 +49,8 @@ class CycleOrchestrator:
             auto_approve: If True, automatically approve all gates
             stop_after: If set, stop after completing this step ID
         """
-        # Initialize cycle
         started_at = datetime.now(timezone.utc)
-        cycle_dir = self._store.create_cycle_dir(macro.macro_id)
+        cycle_id, cycle_dir = self._store.create_cycle_dir(macro.macro_id)
         self._store.write_text(cycle_dir, "input.txt", input_text)
         results: list[StepRun] = []
         failure_reason: str | None = None
@@ -63,7 +59,6 @@ class CycleOrchestrator:
         self._console.info(f"Cycle: {macro.name} ({macro.engine})")
         self._console.info(f"Artifacts: {cycle_dir}")
 
-        # Execute steps
         for idx, step in enumerate(macro.steps, start=1):
             self._log_step_start(idx, len(macro.steps), step.id, step.type)
 
@@ -93,10 +88,10 @@ class CycleOrchestrator:
                     status = CycleStatus.COMPLETED
                     break
         else:
-            # Loop completed without break - all steps succeeded
             status = CycleStatus.COMPLETED
 
         return self._build_cycle(
+            cycle_id=cycle_id,
             cycle_dir=cycle_dir,
             macro=macro,
             results=results,
@@ -104,10 +99,6 @@ class CycleOrchestrator:
             failure_reason=failure_reason,
             started_at=started_at,
         )
-
-    # -------------------------------------------------------------------------
-    # Step handlers
-    # -------------------------------------------------------------------------
 
     def _handle_gate(self, step: GateStep, auto_approve: bool) -> bool:
         """Handle a gate step. Returns True if approved, False to stop."""
@@ -150,10 +141,6 @@ class CycleOrchestrator:
             exit_code=exit_code,
         )
 
-    # -------------------------------------------------------------------------
-    # Helpers
-    # -------------------------------------------------------------------------
-
     def _log_step_start(self, idx: int, total: int, step_id: str, step_type: str) -> None:
         self._console.info(f"[{idx}/{total}] Step: {step_id} ({step_type})")
 
@@ -169,6 +156,7 @@ class CycleOrchestrator:
 
     def _build_cycle(
         self,
+        cycle_id: str,
         cycle_dir: str,
         macro: Macro,
         results: list[StepRun],
@@ -178,7 +166,7 @@ class CycleOrchestrator:
     ) -> Cycle:
         finished_at = datetime.now(timezone.utc) if status != CycleStatus.RUNNING else None
         return Cycle(
-            cycle_id=Path(cycle_dir).name,
+            cycle_id=cycle_id,
             macro_id=macro.macro_id,
             engine=macro.engine,
             cycle_dir=cycle_dir,
