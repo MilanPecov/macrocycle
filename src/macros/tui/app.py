@@ -13,18 +13,151 @@ class MacrocycleApp(App):
     TITLE = "macrocycle"
     
     CSS = """
-    Screen { align: center middle; }
-    #title { text-style: bold; margin-bottom: 1; }
-    OptionList { height: auto; max-height: 15; margin: 1 0; }
-    SelectionList { height: auto; max-height: 15; margin: 1 0; }
-    #setup-hint { color: $warning; margin-top: 1; }
-    #selection-count { margin-top: 1; }
-    #gate-warning { color: $warning; margin-top: 1; }
-    #status { margin-top: 1; }
-    ProgressBar { margin: 0 0 1 0; }
-    #progress-container { height: auto; max-height: 20; }
-    #results { height: auto; }
-    LoadingIndicator { height: 3; }
+    Screen {
+        background: $surface;
+    }
+    
+    /* Title bar */
+    #title {
+        text-style: bold;
+        color: $text;
+        padding: 1 2;
+        background: $primary;
+        width: 100%;
+        text-align: center;
+    }
+    
+    #subtitle {
+        color: $text-muted;
+        padding: 1 2;
+        text-align: center;
+    }
+    
+    /* Option list styling */
+    OptionList {
+        height: auto;
+        max-height: 10;
+        margin: 1 4;
+        border: round $primary;
+        background: $surface;
+        padding: 1;
+    }
+    
+    OptionList:focus {
+        border: round $accent;
+    }
+    
+    OptionList > .option-list--option-highlighted {
+        background: $primary 30%;
+        text-style: bold;
+    }
+    
+    OptionList > .option-list--option-disabled {
+        color: $text-muted;
+    }
+    
+    /* Setup hint box */
+    #setup-box {
+        border: round $warning 50%;
+        margin: 1 4;
+        padding: 1 2;
+        background: $surface-darken-1;
+        height: auto;
+        max-height: 15;
+    }
+    
+    #setup-title {
+        margin-bottom: 1;
+    }
+    
+    #setup-cmd {
+        padding-left: 2;
+    }
+    
+    /* Selection list */
+    SelectionList {
+        height: auto;
+        max-height: 15;
+        margin: 1 4;
+        border: round $primary;
+        background: $surface;
+        padding: 1;
+    }
+    
+    SelectionList:focus {
+        border: round $accent;
+    }
+    
+    /* Selection count */
+    #selection-count {
+        color: $accent;
+        padding: 1 4;
+        text-style: bold;
+    }
+    
+    /* Gate warning */
+    #gate-warning {
+        color: $text;
+        padding: 1 2;
+        background: $warning 15%;
+        margin: 1 4;
+        border: round $warning 50%;
+        text-align: center;
+    }
+    
+    /* Status line */
+    #status {
+        color: $accent;
+        padding: 1 4;
+        text-style: italic;
+    }
+    
+    /* Progress bars */
+    ProgressBar {
+        margin: 0 4 1 4;
+    }
+    
+    ProgressBar Bar {
+        color: $success;
+    }
+    
+    #progress-container {
+        height: auto;
+        max-height: 20;
+        margin: 1 4;
+        padding: 1 2;
+        border: round $primary;
+    }
+    
+    /* Results container */
+    #results {
+        height: auto;
+        margin: 1 4;
+        padding: 1 2;
+        border: round $primary;
+    }
+    
+    /* Utility classes */
+    .success { color: $success; }
+    .error { color: $error; }
+    .warning { color: $warning; }
+    .muted { color: $text-muted; }
+    
+    /* Loading indicator */
+    LoadingIndicator {
+        height: 3;
+        color: $accent;
+    }
+    
+    /* Input fields */
+    Input {
+        margin: 1 4;
+        border: round $primary;
+    }
+    
+    Input:focus {
+        border: round $accent;
+    }
     """
     
     BINDINGS = [
