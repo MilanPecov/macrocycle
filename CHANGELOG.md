@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.2.0 (2026-01-21)
+
+### Feat
+
+- update readme
+- tui polish
+- add work item sources integration (Sentry, GitHub)
+- add work item sources integration (Sentry, GitHub)
+- add more e2e tests
+- add AGENT.md
+
+### Refactor
+
+- **tests**: consolidate helpers and improve GIVEN/WHEN/THEN structure
+- architecture cleanup
+
 ## v0.1.3 (2026-01-16)
 
 ### Fix
