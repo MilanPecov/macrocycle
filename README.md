@@ -28,6 +28,23 @@ git checkout -b fix/your-issue
 macrocycle run fix "Paste your error context here"
 ```
 
+## 🖥️ Interactive TUI
+
+Launch the interactive terminal UI for batch processing:
+
+```bash
+macrocycle tui
+```
+
+The TUI guides you through:
+1. **Select a source** — Connect to Sentry, GitHub, or other integrations
+2. **Pick issues** — Multi-select work items to process
+3. **Choose workflow** — Select which macro to apply
+4. **Watch progress** — Live progress bars for parallel execution
+5. **Review results** — Summary of succeeded/failed items
+
+Perfect for processing multiple issues without writing scripts.
+
 ## 🔄 The Ritual
 
 The default `fix` macro runs your agent through a structured loop:
@@ -99,6 +116,10 @@ macrocycle list                      # List available macros
 macrocycle run <macro> <input>       # Run a macro
 macrocycle run fix "..." --yes       # Skip gate approvals
 macrocycle run fix "..." --until impact  # Stop after specific step
+macrocycle tui                       # Launch interactive TUI
+macrocycle work sources              # List available integrations
+macrocycle work list -s sentry       # List issues from a source
+macrocycle work fix <id> -s sentry   # Fix a specific issue
 ```
 
 ## ✏️ Custom Macros
