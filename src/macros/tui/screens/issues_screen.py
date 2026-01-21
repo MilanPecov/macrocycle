@@ -4,7 +4,8 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, SelectionList, Input, LoadingIndicator
 from textual.binding import Binding
-from textual.worker import Worker, work
+from textual.worker import Worker
+from textual import work
 
 from macros.application.usecases.discover_work_items import discover_work_items
 from macros.application.services.source_registry import get_configured_source

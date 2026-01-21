@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Static, ProgressBar
 from textual.containers import VerticalScroll
-from textual.worker import work
+from textual import work
 
 from macros.domain.model.batch_result import BatchProgress
 from macros.application.usecases.batch_fix_work_items import batch_fix_work_items

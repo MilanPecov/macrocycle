@@ -1,5 +1,3 @@
-"""Cycle orchestration - the heart of macro execution."""
-
 from datetime import datetime, timezone
 from typing import Callable, Literal
 
@@ -52,7 +50,7 @@ class CycleOrchestrator:
         for idx, step in enumerate(macro.steps, start=1):
             if on_step_start:
                 on_step_start(idx, len(macro.steps), step.id, step.type)
-            
+
             self._log_step_start(idx, len(macro.steps), step.id, step.type)
 
             if isinstance(step, GateStep):
