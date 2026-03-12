@@ -1,4 +1,4 @@
-"""Input resolution for CLI commands."""
+"""Input resolution from various sources."""
 
 from pathlib import Path
 import sys
@@ -6,7 +6,7 @@ import sys
 
 def resolve_input(text: str | None, file: str | None) -> str | None:
     """Resolve input from argument, file, or stdin.
-
+    
     Priority:
     1. Explicit "-" means read from stdin
     2. If no text/file provided and stdin has data, read stdin

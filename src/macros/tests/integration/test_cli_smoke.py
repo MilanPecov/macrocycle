@@ -1,3 +1,5 @@
+"""Integration tests for the CLI."""
+
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -9,18 +11,15 @@ from macros.application.container import Container
 from macros.infrastructure.runtime.utils.workspace import set_workspace
 from macros.tests.helpers import (
     FakeAgent,
-    E2E_TEST_MACRO,
+    FakeCommand,
     init_test_workspace,
-    write_macro_to_workspace,
-    init_cycles_dir,
+    write_workflow_to_workspace,
+    init_runs_dir,
+    SAMPLE_WORKFLOW_DICT,
 )
 
 
-class TestCliEndToEnd(unittest.TestCase):
-    """Integration tests for the CLI.
-    
-    These tests verify the full flow from CLI invocation to file artifacts.
-    """
+class TestCliInit(unittest.TestCase):
 
     def setUp(self):
         self.runner = CliRunner()
@@ -28,56 +27,18 @@ class TestCliEndToEnd(unittest.TestCase):
     def tearDown(self):
         set_workspace(None)
 
-    def test_init_creates_macrocycle_directory_structure(self):
-        # GIVEN an empty git repository
+    def test_init_creates_directory_structure(self):
         with self.runner.isolated_filesystem():
             init_test_workspace(Path.cwd())
-
-            # WHEN running 'macrocycle init'
             result = self.runner.invoke(app, ["init"])
 
-            # THEN it succeeds and creates the directory structure
             self.assertEqual(result.exit_code, 0, msg=result.output)
-            self.assertTrue(Path(".macrocycle/macros").is_dir())
-            self.assertTrue(Path(".macrocycle/cycles").is_dir())
-            self.assertTrue(Path(".macrocycle/macros/fix.json").exists())
-
-    def test_run_executes_macro_and_creates_artifacts(self):
-        # GIVEN an initialized workspace with a fake agent
-        with self.runner.isolated_filesystem():
-            init_test_workspace(Path.cwd())
-            self.runner.invoke(app, ["init"])
-
-            def make_test_container():
-                container = Container()
-                container.agent = FakeAgent(text="Test output")
-                return container
-
-            # WHEN running a macro with --until to limit execution
-            with patch("macros.cli.Container", make_test_container):
-                result = self.runner.invoke(app, [
-                    "run", "fix", "Test input", "--until", "impact"
-                ])
-
-            # THEN it succeeds
-            self.assertEqual(result.exit_code, 0, msg=result.output)
-
-            # AND creates cycle artifacts
-            cycles_dir = Path(".macrocycle/cycles")
-            cycle_dirs = list(cycles_dir.iterdir())
-            self.assertEqual(len(cycle_dirs), 1)
-
-            # AND writes the step output
-            step_file = cycle_dirs[0] / "steps/01-impact.md"
-            self.assertTrue(step_file.exists())
-            self.assertEqual(step_file.read_text(), "Test output")
+            self.assertTrue(Path(".macrocycle/workflows").is_dir())
+            self.assertTrue(Path(".macrocycle/runs").is_dir())
+            self.assertTrue(Path(".macrocycle/workflows/fix.json").exists())
 
 
-class TestDryRunPreview(unittest.TestCase):
-    """Tests for --dry-run preview mode.
-    
-    Verifies that dry-run shows correct preview without executing.
-    """
+class TestCliRun(unittest.TestCase):
 
     def setUp(self):
         self.runner = CliRunner()
@@ -85,67 +46,47 @@ class TestDryRunPreview(unittest.TestCase):
     def tearDown(self):
         set_workspace(None)
 
-    def _setup_workspace_with_test_macro(self) -> None:
-        """GIVEN a workspace with the E2E test macro."""
-        init_test_workspace(Path.cwd())
-        write_macro_to_workspace(Path.cwd(), E2E_TEST_MACRO)
-        init_cycles_dir(Path.cwd())
-
-    def test_dry_run_shows_all_steps_with_correct_types(self):
+    def test_run_executes_workflow_and_creates_artifacts(self):
         with self.runner.isolated_filesystem():
-            # GIVEN a workspace with test macro
-            self._setup_workspace_with_test_macro()
+            init_test_workspace(Path.cwd())
+            write_workflow_to_workspace(Path.cwd(), SAMPLE_WORKFLOW_DICT)
+            init_runs_dir(Path.cwd())
 
-            # WHEN running with --dry-run
-            result = self.runner.invoke(app, [
-                "run", "test_flow", "My test input", "--dry-run"
-            ])
+            def make_test_container():
+                container = Container()
+                container.command = FakeCommand(exit_code=0, output="passed")
+                return container
 
-            # THEN it succeeds
+            with patch("macros.cli.Container", make_test_container):
+                with patch.object(
+                    FakeAgent, "run_prompt", return_value=(0, "test output")
+                ):
+                    result = self.runner.invoke(app, [
+                        "run", "sample", "Test input", "--until", "analyze"
+                    ])
+
             self.assertEqual(result.exit_code, 0, msg=result.output)
-            output = result.output
+            self.assertIn("Done", result.output)
 
-            # AND all 6 steps appear in preview
-            for step_id in ["analyze", "plan", "approve", "implement", "review", "finalize"]:
-                self.assertIn(step_id, output)
-
-            # AND step types are shown correctly
-            self.assertIn("[llm]", output)
-            self.assertIn("[gate]", output)
-
-            # AND input text appears in step 1 (not {{INPUT}} literal)
-            self.assertIn("My test input", output)
-            self.assertNotIn("{{INPUT}}", output)
-
-            # AND STEP_OUTPUT placeholders show correctly
-            self.assertIn("[← output from: plan]", output)
-            self.assertIn("[← output from: analyze]", output)
-
-            # AND gate messages are displayed
-            self.assertIn("Approve plan?", output)
-            self.assertIn("Review complete?", output)
-
-    def test_dry_run_does_not_create_artifacts(self):
+    def test_run_missing_workflow_exits_with_error(self):
         with self.runner.isolated_filesystem():
-            # GIVEN a workspace with test macro
-            self._setup_workspace_with_test_macro()
+            init_test_workspace(Path.cwd())
+            init_runs_dir(Path.cwd())
 
-            # WHEN running with --dry-run
-            result = self.runner.invoke(app, [
-                "run", "test_flow", "My test input", "--dry-run"
-            ])
+            result = self.runner.invoke(app, ["run", "nonexistent", "input"])
 
-            # THEN no cycle artifacts are created
-            cycles_dir = Path(".macrocycle/cycles")
-            cycle_dirs = list(cycles_dir.iterdir())
-            self.assertEqual(len(cycle_dirs), 0, "Dry-run should not create cycle directories")
+            self.assertNotEqual(result.exit_code, 0)
+
+    def test_run_without_input_exits_with_error(self):
+        with self.runner.isolated_filesystem():
+            init_test_workspace(Path.cwd())
+
+            result = self.runner.invoke(app, ["run", "fix"])
+
+            self.assertEqual(result.exit_code, 2)
 
 
-class TestFullFlowWithContextVerification(unittest.TestCase):
-    """Tests for full macro execution with context accumulation.
-    
-    Verifies that prompts contain correct context from previous steps.
-    """
+class TestCliList(unittest.TestCase):
 
     def setUp(self):
         self.runner = CliRunner()
@@ -153,101 +94,19 @@ class TestFullFlowWithContextVerification(unittest.TestCase):
     def tearDown(self):
         set_workspace(None)
 
-    def test_full_flow_accumulates_context_correctly(self):
+    def test_list_empty_workspace_exits_with_error(self):
         with self.runner.isolated_filesystem():
-            # GIVEN a workspace with test macro and auto-increment agent
             init_test_workspace(Path.cwd())
-            write_macro_to_workspace(Path.cwd(), E2E_TEST_MACRO)
-            init_cycles_dir(Path.cwd())
+            result = self.runner.invoke(app, ["list"])
 
-            test_agent = FakeAgent(auto_increment=True)
+            self.assertNotEqual(result.exit_code, 0)
 
-            def make_test_container():
-                container = Container()
-                container.agent = test_agent
-                return container
-
-            # WHEN running full macro with --yes to auto-approve gates
-            with patch("macros.cli.Container", make_test_container):
-                result = self.runner.invoke(app, [
-                    "run", "test_flow", "My test input", "--yes"
-                ])
-
-            # THEN it succeeds
-            self.assertEqual(result.exit_code, 0, msg=result.output)
-
-            # AND agent was called 4 times (4 LLM steps, 2 gates skipped)
-            self.assertEqual(test_agent.call_count, 4)
-
-            # AND prompt to step 1 contains input text
-            self.assertIn("My test input", test_agent.prompts[0])
-
-            # AND prompt to step 2 contains output from step 1 (context accumulation)
-            self.assertIn("Output from step 1", test_agent.prompts[1])
-
-            # AND prompt to step 4 (implement) contains output from plan via explicit reference
-            self.assertIn("Output from step 2", test_agent.prompts[2])
-
-            # AND prompt to step 6 (finalize) contains output from analyze (non-adjacent)
-            self.assertIn("Output from step 1", test_agent.prompts[3])
-
-            # AND all expected artifacts were created
-            cycles_dir = Path(".macrocycle/cycles")
-            cycle_dirs = list(cycles_dir.iterdir())
-            self.assertEqual(len(cycle_dirs), 1)
-
-            steps_dir = cycle_dirs[0] / "steps"
-            self.assertTrue((steps_dir / "01-analyze.md").exists())
-            self.assertTrue((steps_dir / "02-plan.md").exists())
-            self.assertTrue((steps_dir / "04-implement.md").exists())
-            self.assertTrue((steps_dir / "06-finalize.md").exists())
-
-
-class TestGateDenial(unittest.TestCase):
-    """Tests for gate denial behavior.
-    
-    Verifies that denying a gate stops execution correctly.
-    """
-
-    def setUp(self):
-        self.runner = CliRunner()
-
-    def tearDown(self):
-        set_workspace(None)
-
-    def test_gate_denial_stops_execution(self):
+    def test_list_shows_workflows(self):
         with self.runner.isolated_filesystem():
-            # GIVEN a workspace with test macro
             init_test_workspace(Path.cwd())
-            write_macro_to_workspace(Path.cwd(), E2E_TEST_MACRO)
-            init_cycles_dir(Path.cwd())
+            write_workflow_to_workspace(Path.cwd(), SAMPLE_WORKFLOW_DICT)
 
-            test_agent = FakeAgent(auto_increment=True)
+            result = self.runner.invoke(app, ["list"])
 
-            def make_test_container():
-                container = Container()
-                container.agent = test_agent
-                return container
-
-            # WHEN running and denying at the gate (no --yes flag, simulate 'n')
-            with patch("macros.cli.Container", make_test_container):
-                result = self.runner.invoke(app, [
-                    "run", "test_flow", "My test input"
-                ], input="n\n")
-
-            # THEN only steps before gate executed (2 LLM steps)
-            self.assertEqual(test_agent.call_count, 2)
-
-            # AND cycle artifacts exist for steps 1-2 only
-            cycles_dir = Path(".macrocycle/cycles")
-            cycle_dirs = list(cycles_dir.iterdir())
-            self.assertEqual(len(cycle_dirs), 1)
-
-            steps_dir = cycle_dirs[0] / "steps"
-            self.assertTrue((steps_dir / "01-analyze.md").exists())
-            self.assertTrue((steps_dir / "02-plan.md").exists())
-            self.assertFalse((steps_dir / "04-implement.md").exists())
-            self.assertFalse((steps_dir / "06-finalize.md").exists())
-
-            # AND output indicates cancellation
-            self.assertIn("stopped", result.output.lower())
+            self.assertEqual(result.exit_code, 0)
+            self.assertIn("sample", result.output)

@@ -1,1 +1,1 @@
-"""Macrocycle - ritualized AI agent workflows."""
+"""Macrocycle - closed-loop AI agent workflows."""

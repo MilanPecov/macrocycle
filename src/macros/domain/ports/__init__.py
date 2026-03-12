@@ -1,11 +1,13 @@
 from .agent_port import AgentPort
-from .macro_registry_port import MacroRegistryPort
+from .command_port import CommandPort
 from .console_port import ConsolePort
-from .cycle_store_port import CycleStorePort
+from .run_store_port import RunStorePort
+from .workflow_registry_port import WorkflowRegistryPort
 
 __all__ = [
     "AgentPort",
-    "MacroRegistryPort",
+    "CommandPort",
     "ConsolePort",
-    "CycleStorePort",
+    "RunStorePort",
+    "WorkflowRegistryPort",
 ]

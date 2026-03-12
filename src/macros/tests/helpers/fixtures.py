@@ -1,79 +1,100 @@
-"""Shared test fixtures and constants."""
+"""Shared test fixtures and workflow builders."""
 
 import json
 from pathlib import Path
 
+from macros.domain.model.agent_config import AgentConfig
+from macros.domain.model.step import LlmStep, CommandStep
+from macros.domain.model.workflow import Phase, Validation, Workflow
 from macros.infrastructure.runtime.utils.workspace import set_workspace
 
 
-# =============================================================================
-# Test Macro Definitions
-# =============================================================================
+def make_workflow(
+    *,
+    phases: tuple[Phase, ...] | None = None,
+    workflow_id: str = "test",
+    name: str = "Test Workflow",
+    agent: AgentConfig | None = None,
+) -> Workflow:
+    """Build a Workflow with sensible defaults for testing."""
+    if phases is None:
+        phases = (
+            Phase(
+                id="default",
+                steps=(LlmStep(id="s1", prompt="Do: {{INPUT}}"),),
+            ),
+        )
+    return Workflow(
+        id=workflow_id,
+        name=name,
+        agent=agent or AgentConfig(),
+        phases=phases,
+    )
 
-SAMPLE_MACRO_DICT = {
-    "macro_id": "sample",
-    "name": "Sample Macro",
-    "engine": "cursor",
-    "include_previous_outputs": True,
-    "steps": [
-        {"id": "s1", "type": "llm", "prompt": "Do something with {{INPUT}}"},
-        {"id": "g1", "type": "gate", "message": "Continue?"},
-        {"id": "s2", "type": "llm", "prompt": "Based on: {{STEP_OUTPUT:s1}}"},
-    ]
+
+def make_phase(
+    phase_id: str = "test_phase",
+    *,
+    steps: tuple | None = None,
+    max_iterations: int = 1,
+    validation: Validation | None = None,
+    context: tuple[str, ...] = (),
+    on_complete: str | None = None,
+    on_exhausted: str | None = None,
+    agent: AgentConfig | None = None,
+) -> Phase:
+    """Build a Phase with sensible defaults for testing."""
+    if steps is None:
+        steps = (LlmStep(id="s1", prompt="Do: {{INPUT}}"),)
+    return Phase(
+        id=phase_id,
+        steps=steps,
+        max_iterations=max_iterations,
+        validation=validation,
+        context=context,
+        on_complete=on_complete,
+        on_exhausted=on_exhausted,
+        agent=agent,
+    )
+
+
+SAMPLE_WORKFLOW_DICT = {
+    "id": "sample",
+    "name": "Sample Workflow",
+    "agent": {"engine": "cursor"},
+    "phases": [
+        {
+            "id": "analyze",
+            "steps": [{"id": "s1", "type": "llm", "prompt": "Analyze: {{INPUT}}"}],
+            "on_complete": "implement",
+        },
+        {
+            "id": "implement",
+            "steps": [
+                {"id": "code", "type": "llm", "prompt": "Implement: {{PHASE_OUTPUT:analyze}}"},
+                {"id": "test", "type": "command", "command": "pytest -q"},
+            ],
+            "validation": {"command": "pytest -q"},
+            "max_iterations": 3,
+            "context": ["analyze"],
+        },
+    ],
 }
 
-SAMPLE_MACRO_JSON = json.dumps(SAMPLE_MACRO_DICT)
-
-# A comprehensive macro covering many domain cases
-E2E_TEST_MACRO = {
-    "macro_id": "test_flow",
-    "name": "Test Flow",
-    "engine": "cursor",
-    "include_previous_outputs": True,
-    "steps": [
-        # Step 1: Tests {{INPUT}} substitution
-        {"id": "analyze", "type": "llm", "prompt": "Analyze: {{INPUT}}"},
-        # Step 2: Tests context accumulation (previous output appended)
-        {"id": "plan", "type": "llm", "prompt": "Create plan based on analysis."},
-        # Step 3: Gate after LLM steps
-        {"id": "approve", "type": "gate", "message": "Approve plan?"},
-        # Step 4: LLM after gate, explicit {{STEP_OUTPUT:id}} reference
-        {"id": "implement", "type": "llm", "prompt": "Implement: {{STEP_OUTPUT:plan}}"},
-        # Step 5: Multiple gates in flow
-        {"id": "review", "type": "gate", "message": "Review complete?"},
-        # Step 6: Reference non-adjacent step
-        {"id": "finalize", "type": "llm", "prompt": "Finalize. Original was: {{STEP_OUTPUT:analyze}}"},
-    ]
-}
-
-
-# =============================================================================
-# Workspace Helpers
-# =============================================================================
 
 def init_test_workspace(path: Path) -> None:
-    """Initialize a test workspace with .git marker.
-    
-    GIVEN: A path to use as workspace
-    WHEN:  Called
-    THEN:  Creates .git dir and sets workspace
-    """
-    Path(path / ".git").mkdir(parents=True, exist_ok=True)
+    """Set up a test workspace."""
+    (path / ".git").mkdir(parents=True, exist_ok=True)
     set_workspace(path)
 
 
-def write_macro_to_workspace(workspace: Path, macro: dict) -> None:
-    """Write a macro definition to the workspace.
-    
-    GIVEN: A workspace path and macro dict
-    WHEN:  Called
-    THEN:  Writes the macro JSON to .macrocycle/macros/<macro_id>.json
-    """
-    macro_dir = workspace / ".macrocycle" / "macros"
-    macro_dir.mkdir(parents=True, exist_ok=True)
-    (macro_dir / f"{macro['macro_id']}.json").write_text(json.dumps(macro))
+def write_workflow_to_workspace(workspace: Path, workflow: dict) -> None:
+    """Write a workflow JSON to the workspace."""
+    wf_dir = workspace / ".macrocycle" / "workflows"
+    wf_dir.mkdir(parents=True, exist_ok=True)
+    (wf_dir / f"{workflow['id']}.json").write_text(json.dumps(workflow))
 
 
-def init_cycles_dir(workspace: Path) -> None:
-    """Create the cycles directory in the workspace."""
-    (workspace / ".macrocycle" / "cycles").mkdir(parents=True, exist_ok=True)
+def init_runs_dir(workspace: Path) -> None:
+    """Create the runs directory."""
+    (workspace / ".macrocycle" / "runs").mkdir(parents=True, exist_ok=True)

@@ -1,13 +1,11 @@
-from .init_repo import init_repo
-from .list_macros import list_macros
-from .run_macro import run_macro
+from .run_workflow import run_workflow
+from .init_workspace import init_workspace
+from .list_workflows import list_workflows
 from .get_status import get_status
-from .preview_macro import preview_macro
 
 __all__ = [
-    "init_repo",
-    "list_macros",
-    "run_macro",
+    "run_workflow",
+    "init_workspace",
+    "list_workflows",
     "get_status",
-    "preview_macro",
 ]

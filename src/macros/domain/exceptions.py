@@ -3,20 +3,15 @@
 
 class MacrocycleError(Exception):
     """Base exception for all domain errors."""
-    pass
 
 
-class MacroValidationError(MacrocycleError):
-    """Raised when a macro definition is invalid.
-    
-    Examples:
-    - Duplicate step IDs
-    - Invalid step references
-    - Missing required fields
-    """
-    pass
+class WorkflowValidationError(MacrocycleError):
+    """Raised when a workflow definition is invalid."""
 
 
-class MacroNotFoundError(MacrocycleError):
-    """Raised when a requested macro does not exist."""
-    pass
+class WorkflowNotFoundError(MacrocycleError):
+    """Raised when a requested workflow does not exist."""
+
+
+class PhaseExecutionError(MacrocycleError):
+    """Raised when phase execution fails unrecoverably."""

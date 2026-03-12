@@ -1,143 +1,90 @@
-import unittest
+"""Tests for PromptBuilder -- variable substitution and feedback injection."""
 
-from macros.domain.model.macro import LlmStep
+import unittest
+from types import MappingProxyType
+
+from macros.domain.model.context import ExecutionContext
 from macros.domain.services.prompt_builder import PromptBuilder
-from macros.domain.services.template_renderer import TemplateRenderer
 from macros.tests.helpers import make_step_run
 
 
 class TestPromptBuilder(unittest.TestCase):
-    """Tests for the PromptBuilder service.
-    
-    PromptBuilder handles:
-    - Template variable substitution ({{INPUT}}, {{STEP_OUTPUT:id}})
-    - Previous step context assembly
-    """
 
     def setUp(self):
-        self.renderer = TemplateRenderer()
-        self.builder = PromptBuilder(self.renderer)
+        self.builder = PromptBuilder()
 
-    # -------------------------------------------------------------------------
-    # Variable Substitution
-    # -------------------------------------------------------------------------
+    def _ctx(self, **kwargs) -> ExecutionContext:
+        defaults = {
+            "input": "test input",
+            "phase_outputs": MappingProxyType({}),
+            "iteration": 1,
+            "validation_output": None,
+        }
+        defaults.update(kwargs)
+        return ExecutionContext(**defaults)
 
     def test_substitutes_input_variable(self):
-        # GIVEN a prompt template with {{INPUT}}
-        step = LlmStep(id="s1", prompt="Process: {{INPUT}}")
-
-        # WHEN building the prompt with user input
         result = self.builder.build(
-            step=step,
-            input_text="Hello World",
-            previous_results=[],
-            include_previous_context=False,
+            "Analyze: {{INPUT}}",
+            self._ctx(input="the bug"),
+            [],
         )
+        self.assertEqual(result, "Analyze: the bug")
 
-        # THEN the variable is replaced with the input
-        self.assertEqual(result, "Process: Hello World")
+    def test_substitutes_phase_output_variable(self):
+        ctx = self._ctx(phase_outputs=MappingProxyType({"analyze": "analysis done"}))
+        result = self.builder.build(
+            "Based on: {{PHASE_OUTPUT:analyze}}",
+            ctx,
+            [],
+        )
+        self.assertEqual(result, "Based on: analysis done")
 
     def test_substitutes_step_output_variable(self):
-        # GIVEN a previous step's output
-        prev = make_step_run("analyze", "Analysis complete")
-        step = LlmStep(id="s2", prompt="Based on: {{STEP_OUTPUT:analyze}}")
-
-        # WHEN building the prompt
+        prev = make_step_run("impact", "impact result")
         result = self.builder.build(
-            step=step,
-            input_text="ignored",
-            previous_results=[prev],
-            include_previous_context=False,
+            "Using: {{STEP_OUTPUT:impact}}",
+            self._ctx(),
+            [prev],
         )
+        self.assertEqual(result, "Using: impact result")
 
-        # THEN the step output variable is replaced
-        self.assertEqual(result, "Based on: Analysis complete")
+    def test_substitutes_iteration_variable(self):
+        ctx = self._ctx(iteration=3)
+        result = self.builder.build("Attempt {{ITERATION}}", ctx, [])
+        self.assertEqual(result, "Attempt 3")
+
+    def test_substitutes_validation_output_variable(self):
+        ctx = self._ctx(iteration=2, validation_output="FAILED: 3 tests")
+        result = self.builder.build(
+            "Errors: {{VALIDATION_OUTPUT}}",
+            ctx,
+            [],
+        )
+        self.assertIn("Errors: FAILED: 3 tests", result)
 
     def test_unknown_variables_kept_as_is(self):
-        # GIVEN a prompt with an unknown variable
-        step = LlmStep(id="s1", prompt="{{UNKNOWN}} and {{INPUT}}")
+        result = self.builder.build("{{UNKNOWN}} and {{INPUT}}", self._ctx(), [])
+        self.assertEqual(result, "{{UNKNOWN}} and test input")
 
-        # WHEN building the prompt
+    def test_feedback_appended_on_iteration_gt_1(self):
+        ctx = self._ctx(iteration=2, validation_output="2 tests failed")
         result = self.builder.build(
-            step=step,
-            input_text="X",
-            previous_results=[],
-            include_previous_context=False,
+            "Fix the code",
+            ctx,
+            [],
+            max_iterations=5,
         )
+        self.assertIn("Validation Failed (attempt 2/5)", result)
+        self.assertIn("2 tests failed", result)
+        self.assertIn("Fix the issues above", result)
 
-        # THEN unknown variables remain, known ones are replaced
-        self.assertEqual(result, "{{UNKNOWN}} and X")
+    def test_no_feedback_on_first_iteration(self):
+        ctx = self._ctx(iteration=1, validation_output=None)
+        result = self.builder.build("Fix the code", ctx, [])
+        self.assertNotIn("Validation Failed", result)
 
-    # -------------------------------------------------------------------------
-    # Context Assembly
-    # -------------------------------------------------------------------------
-
-    def test_appends_previous_context_when_enabled(self):
-        # GIVEN a previous step result and context enabled
-        prev = make_step_run("step1", "Output from step1")
-        step = LlmStep(id="s2", prompt="Do something")
-
-        # WHEN building the prompt with context enabled
-        result = self.builder.build(
-            step=step,
-            input_text="input",
-            previous_results=[prev],
-            include_previous_context=True,
-        )
-
-        # THEN the context section is appended
-        self.assertIn("Do something", result)
-        self.assertIn("Context from previous steps", result)
-        self.assertIn("## step1", result)
-        self.assertIn("Output from step1", result)
-
-    def test_no_context_when_disabled(self):
-        # GIVEN a previous step result but context disabled
-        prev = make_step_run("step1", "Output from step1")
-        step = LlmStep(id="s2", prompt="Do something")
-
-        # WHEN building the prompt with context disabled
-        result = self.builder.build(
-            step=step,
-            input_text="input",
-            previous_results=[prev],
-            include_previous_context=False,
-        )
-
-        # THEN no context is appended
-        self.assertEqual(result, "Do something")
-
-    def test_no_context_for_first_step(self):
-        # GIVEN no previous results (first step)
-        step = LlmStep(id="s1", prompt="First step")
-
-        # WHEN building with context enabled but no prior steps
-        result = self.builder.build(
-            step=step,
-            input_text="input",
-            previous_results=[],
-            include_previous_context=True,
-        )
-
-        # THEN no context section is added
-        self.assertEqual(result, "First step")
-
-    def test_multiple_previous_outputs_all_included(self):
-        # GIVEN multiple previous step results
-        prev1 = make_step_run("impact", "Impact analysis done")
-        prev2 = make_step_run("plan", "Plan created")
-        step = LlmStep(id="implement", prompt="Now implement")
-
-        # WHEN building the prompt
-        result = self.builder.build(
-            step=step,
-            input_text="input",
-            previous_results=[prev1, prev2],
-            include_previous_context=True,
-        )
-
-        # THEN all previous outputs are included with separators
-        self.assertIn("## impact", result)
-        self.assertIn("Impact analysis done", result)
-        self.assertIn("## plan", result)
-        self.assertIn("Plan created", result)
+    def test_no_feedback_when_validation_output_is_none(self):
+        ctx = self._ctx(iteration=3, validation_output=None)
+        result = self.builder.build("Fix the code", ctx, [])
+        self.assertNotIn("Validation Failed", result)

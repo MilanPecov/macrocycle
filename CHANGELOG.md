@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.0 (2026-03-12)
+
+### Feat
+
+- replace macro/cycle model with closed-loop workflow engine
+
 ## v0.3.0 (2026-03-12)
 
 ### Refactor

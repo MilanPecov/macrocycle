@@ -1,53 +1,83 @@
-"""Prompt assembly for LLM steps."""
+"""PromptBuilder -- assembles prompts with variable substitution and feedback injection."""
 
-from macros.domain.model.macro import LlmStep
-from macros.domain.model.cycle import StepRun
-from macros.domain.services.template_renderer import TemplateRenderer
+import re
+
+from macros.domain.model.context import ExecutionContext
+from macros.domain.model.run import StepRun
+
+
+_VAR_PATTERN = re.compile(r"\{\{([^}]+)\}\}")
 
 
 class PromptBuilder:
-    """Builds prompts for LLM steps with context from previous steps.
+    """Builds prompts for LLM steps with context from the execution state.
 
-    Handles:
-    - Template variable substitution ({{INPUT}}, {{STEP_OUTPUT:id}})
-    - Appending context from previous step outputs
+    Supported variables:
+      {{INPUT}}                 -- original user input
+      {{PHASE_OUTPUT:phase_id}} -- output from a completed phase
+      {{STEP_OUTPUT:step_id}}   -- output from a prior step in the same phase
+      {{ITERATION}}             -- current iteration number (1-based)
+      {{VALIDATION_OUTPUT}}     -- error signal from the last validation sensor
+
+    When iteration > 1 and validation_output is present, a feedback block
+    is auto-appended to drive the agent toward convergence.
     """
-
-    def __init__(self, renderer: TemplateRenderer) -> None:
-        self._renderer = renderer
 
     def build(
         self,
-        step: LlmStep,
-        input_text: str,
-        previous_results: list[StepRun],
-        include_previous_context: bool,
+        template: str,
+        context: ExecutionContext,
+        step_results: list[StepRun],
+        max_iterations: int = 1,
     ) -> str:
-        """Build the final prompt for an LLM step."""
-        variables = self._build_variables(input_text, previous_results, step.id)
-        rendered = self._renderer.render(step.prompt, variables)
+        variables = self._collect_variables(context, step_results)
+        rendered = self._substitute(template, variables)
 
-        if include_previous_context and previous_results:
-            context = self._format_previous_outputs(previous_results)
-            rendered = f"{rendered}\n\n---\nContext from previous steps (do not ignore):\n\n{context}"
+        if context.iteration > 1 and context.validation_output:
+            rendered = self._append_feedback(
+                rendered, context.validation_output, context.iteration, max_iterations
+            )
 
         return rendered
 
-    def _build_variables(
+    def _collect_variables(
         self,
-        input_text: str,
-        results: list[StepRun],
-        current_step_id: str,
+        context: ExecutionContext,
+        step_results: list[StepRun],
     ) -> dict[str, str]:
-        variables: dict[str, str] = {"INPUT": input_text}
-        for r in results:
-            variables[f"STEP_OUTPUT:{r.step_id}"] = r.output_text
-        variables[f"STEP_OUTPUT:{current_step_id}"] = ""
+        variables: dict[str, str] = {
+            "INPUT": context.input,
+            "ITERATION": str(context.iteration),
+        }
+
+        if context.validation_output is not None:
+            variables["VALIDATION_OUTPUT"] = context.validation_output
+
+        for phase_id, output in context.phase_outputs.items():
+            variables[f"PHASE_OUTPUT:{phase_id}"] = output
+
+        for sr in step_results:
+            variables[f"STEP_OUTPUT:{sr.step_id}"] = sr.output
+
         return variables
 
-    def _format_previous_outputs(self, results: list[StepRun]) -> str:
-        chunks = [
-            f"## {r.step_id}\n\n{r.output_text.strip()}\n"
-            for r in results
-        ]
-        return "\n\n---\n\n".join(chunks)
+    def _substitute(self, template: str, variables: dict[str, str]) -> str:
+        def replacer(match: re.Match) -> str:
+            key = match.group(1)
+            return variables.get(key, match.group(0))
+
+        return _VAR_PATTERN.sub(replacer, template)
+
+    def _append_feedback(
+        self,
+        prompt: str,
+        validation_output: str,
+        iteration: int,
+        max_iterations: int,
+    ) -> str:
+        feedback = (
+            f"\n\n--- Validation Failed (attempt {iteration}/{max_iterations}) ---\n"
+            f"{validation_output.strip()}\n"
+            f"--- Fix the issues above and try again ---"
+        )
+        return prompt + feedback

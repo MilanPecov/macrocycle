@@ -1,26 +1,25 @@
 """Test helpers and utilities."""
 
-from .fakes import FakeAgent, FakeCycleStore, FakeConsole, make_step_run
+from .fakes import FakeAgent, FakeCommand, FakeRunStore, FakeConsole, make_step_run
 from .fixtures import (
-    SAMPLE_MACRO_DICT,
-    SAMPLE_MACRO_JSON,
-    E2E_TEST_MACRO,
+    make_workflow,
+    make_phase,
+    SAMPLE_WORKFLOW_DICT,
     init_test_workspace,
-    write_macro_to_workspace,
-    init_cycles_dir,
+    write_workflow_to_workspace,
+    init_runs_dir,
 )
 
 __all__ = [
-    # Fakes
     "FakeAgent",
-    "FakeCycleStore",
+    "FakeCommand",
+    "FakeRunStore",
     "FakeConsole",
     "make_step_run",
-    # Fixtures
-    "SAMPLE_MACRO_DICT",
-    "SAMPLE_MACRO_JSON",
-    "E2E_TEST_MACRO",
+    "make_workflow",
+    "make_phase",
+    "SAMPLE_WORKFLOW_DICT",
     "init_test_workspace",
-    "write_macro_to_workspace",
-    "init_cycles_dir",
+    "write_workflow_to_workspace",
+    "init_runs_dir",
 ]

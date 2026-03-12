@@ -1,7 +1,6 @@
-"""Workspace root discovery and management."""
-
 from pathlib import Path
 
+# Module-level singleton - discovered once, used everywhere
 _workspace: Path | None = None
 
 
@@ -25,7 +24,9 @@ def set_workspace(path: Path | str | None) -> None:
 def _discover_workspace() -> Path:
     """Find the workspace root by walking up the directory tree.
 
-    Heuristic: walk up until we find .git or .macrocycle, otherwise use cwd.
+    Heuristic:
+    - Walk up until we find .git or .macrocycle
+    - Otherwise use cwd
     """
     p = Path.cwd().resolve()
     for _ in range(20):

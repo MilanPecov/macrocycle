@@ -1,5 +1,3 @@
-"""Cursor Agent CLI adapter."""
-
 import subprocess
 
 from macros.domain.ports.agent_port import AgentPort
@@ -7,13 +5,14 @@ from macros.domain.ports.console_port import ConsolePort
 from macros.infrastructure.runtime.utils.workspace import get_workspace
 
 
-TIMEOUT_SECONDS = 300
+TIMEOUT_SECONDS = 300  # Avoid hanging indefinitely
 
 
 class CursorAgentAdapter(AgentPort):
-    """Runs Cursor Agent CLI in print mode.
+    """Runs Cursor Agent CLI in "print mode".
 
-    Executes prompts via: agent -p --force --output-format text "..."
+    Cursor docs show using headless automation like:
+      agent -p --force --output-format text "..."
     """
 
     def __init__(

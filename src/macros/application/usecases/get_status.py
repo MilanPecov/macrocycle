@@ -1,9 +1,8 @@
-"""Get cycle status use case."""
+"""Use case: get status of the latest run."""
 
 from macros.application.container import Container
-from macros.domain.model import CycleInfo
+from macros.domain.model.run import RunInfo
 
 
-def get_status(container: Container) -> CycleInfo | None:
-    """Return info about the most recent cycle, or None if no cycles exist."""
-    return container.cycle_store.get_latest_cycle()
+def get_status(container: Container) -> RunInfo | None:
+    return container.run_store.get_latest_run()

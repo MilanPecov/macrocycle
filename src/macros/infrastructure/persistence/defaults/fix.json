@@ -1,49 +1,77 @@
 {
-  "macro_id": "fix",
-  "name": "Fix",
-  "engine": "cursor",
-  "mode": "auto",
-  "include_previous_outputs": true,
-  "steps": [
+  "id": "fix",
+  "name": "Fix Issue",
+  "agent": {"engine": "cursor"},
+  "phases": [
     {
-      "id": "impact",
-      "type": "llm",
-      "prompt": "Perform a focused impact analysis for the issue below.\n\nFollow this process:\n1. Provide your initial answer\n2. List potential errors or gaps in your answer\n3. For each potential error, verify using factual reasoning\n4. Provide corrected final answer\n\nError context:\n\n{{INPUT}}\n"
+      "id": "analyze",
+      "steps": [
+        {
+          "id": "impact",
+          "type": "llm",
+          "prompt": "Perform a focused impact analysis for the issue below.\n\nFollow this process:\n1. Provide your initial answer\n2. List potential errors or gaps in your answer\n3. For each potential error, verify using factual reasoning\n4. Provide corrected final answer\n\nError context:\n\n{{INPUT}}\n"
+        }
+      ],
+      "max_iterations": 1,
+      "on_complete": "plan"
     },
     {
       "id": "plan",
-      "type": "llm",
-      "prompt": "Produce a concrete plan to fix this issue. Keep steps atomic and verifiable.\n\nOutput:\n- Steps (numbered)\n- Files to touch (with reasons)\n- Test plan (unit/integration)\n- Rollout/verify\n"
-    },
-    {
-      "id": "reject",
-      "type": "llm",
-      "prompt": "Your plan was reviewed by senior, staff and principal engineers. They rejected it - too much hand-waving. Revise the plan to be more technical and precise. Be specific about what code changes, why, and how you'll verify.\n"
-    },
-    {
-      "id": "approve",
-      "type": "gate",
-      "message": "Review the refined plan above. Approve to proceed with implementation?"
+      "steps": [
+        {
+          "id": "create_plan",
+          "type": "llm",
+          "prompt": "Based on the analysis:\n\n{{PHASE_OUTPUT:analyze}}\n\nProduce a concrete plan to fix this issue. Keep steps atomic and verifiable.\n\nOutput:\n- Steps (numbered)\n- Files to touch (with reasons)\n- Test plan (unit/integration)\n- Rollout/verify\n"
+        },
+        {
+          "id": "reject_plan",
+          "type": "llm",
+          "prompt": "Your plan was reviewed by senior, staff and principal engineers. They rejected it - too much hand-waving. Revise the plan to be more technical and precise. Be specific about what code changes, why, and how you'll verify.\n"
+        }
+      ],
+      "max_iterations": 2,
+      "context": ["analyze"],
+      "on_complete": "implement"
     },
     {
       "id": "implement",
-      "type": "llm",
-      "prompt": "Implement the approved plan now. Make the code changes, add tests if needed, and run tests to verify. Do not commit yet.\n"
+      "steps": [
+        {
+          "id": "code",
+          "type": "llm",
+          "prompt": "Implement the approved plan now:\n\n{{PHASE_OUTPUT:plan}}\n\nMake the code changes, add tests if needed, and run tests to verify. Do not commit yet.\n"
+        }
+      ],
+      "validation": {"command": "pytest --tb=short -q 2>&1 | tail -30"},
+      "max_iterations": 5,
+      "context": ["plan"],
+      "on_complete": "review"
     },
     {
       "id": "review",
-      "type": "llm",
-      "prompt": "Review all the code you just wrote with fresh eyes. Look for bugs, edge cases, missing error handling, or anything that could break. Fix any issues you find.\n"
+      "steps": [
+        {
+          "id": "review_code",
+          "type": "llm",
+          "prompt": "Review all the code you just wrote with fresh eyes. Look for bugs, edge cases, missing error handling, or anything that could break. Fix any issues you find. Then simplify and clean up.\n"
+        }
+      ],
+      "validation": {"command": "pytest --tb=short -q 2>&1 | tail -30"},
+      "max_iterations": 3,
+      "context": ["implement"],
+      "on_complete": "ship"
     },
     {
-      "id": "simplify",
-      "type": "llm",
-      "prompt": "Simplify and clean up the code. Focus on:\n- Removing unnecessary complexity\n- Improving readability\n- Following project conventions\n- Ensuring maintainability\n\nDo not change functionality, only improve clarity.\n"
-    },
-    {
-      "id": "pr",
-      "type": "llm",
-      "prompt": "Commit all changes with a clear commit message, then create a pull request.\n\nPR description should include:\n- Context: what was the issue?\n- Solution: what changed and why?\n- Testing: how was this verified?\n"
+      "id": "ship",
+      "steps": [
+        {
+          "id": "pr",
+          "type": "llm",
+          "prompt": "Commit all changes with a clear commit message, then create a pull request.\n\nOriginal issue:\n{{INPUT}}\n\nPR description should include:\n- Context: what was the issue?\n- Solution: what changed and why?\n- Testing: how was this verified?\n"
+        }
+      ],
+      "max_iterations": 1,
+      "context": ["analyze", "plan"]
     }
   ]
 }
