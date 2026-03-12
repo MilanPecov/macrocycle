@@ -2,11 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.5.0 (2026-03-12)
+## v0.4.0 (2026-03-12)
 
 ### Feat
 
-- replace macro/cycle model with closed-loop workflow engine
+- **BREAKING**: replace macro/cycle model with closed-loop workflow engine
+- phase-based execution with validation feedback loops
+- AgentConfig cascade (Workflow -> Phase -> Step) for multi-model support
+- CommandPort for shell-based validation sensors
+- checkpoint manifests for crash recovery
+
+### Removed
+
+- Pydantic, Jinja2, Textual dependencies
+- GateStep (fully autonomous execution)
+- TUI, work item integrations, batch orchestrator
 
 ## v0.3.0 (2026-03-12)
 
