@@ -6,10 +6,6 @@ All notable changes to this project will be documented in this file.
 
 ### Feat
 
-- update readme
-- tui polish
-- add work item sources integration (Sentry, GitHub)
-- add work item sources integration (Sentry, GitHub)
 - add more e2e tests
 - add AGENT.md
 
@@ -17,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 - **tests**: consolidate helpers and improve GIVEN/WHEN/THEN structure
 - architecture cleanup
+- strip integrations layer, focus on control loop
 
 ## v0.1.3 (2026-01-16)
 

@@ -1,7 +1,6 @@
 """Macro validation logic."""
 
 import re
-from typing import Set
 
 from macros.domain.model.macro import Macro, LlmStep
 from macros.domain.exceptions import MacroValidationError
@@ -36,7 +35,7 @@ class MacroValidator:
             )
 
     def _validate_unique_step_ids(self, macro: Macro) -> None:
-        seen: Set[str] = set()
+        seen: set[str] = set()
         for step in macro.steps:
             if step.id in seen:
                 raise MacroValidationError(
@@ -46,7 +45,7 @@ class MacroValidator:
 
     def _validate_step_references(self, macro: Macro) -> None:
         """Ensure STEP_OUTPUT references point to earlier steps."""
-        seen_ids: Set[str] = set()
+        seen_ids: set[str] = set()
         
         for step in macro.steps:
             if isinstance(step, LlmStep):
@@ -61,6 +60,6 @@ class MacroValidator:
             
             seen_ids.add(step.id)
 
-    def _extract_step_references(self, prompt: str) -> Set[str]:
+    def _extract_step_references(self, prompt: str) -> set[str]:
         matches = STEP_OUTPUT_PATTERN.findall(prompt)
         return set(matches)

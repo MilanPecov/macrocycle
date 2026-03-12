@@ -10,9 +10,4 @@ __all__ = [
     "run_macro",
     "get_status",
     "preview_macro",
-    "discover_work_items",
-    "fix_work_item",
-    "discover_work_items",
-    "fix_work_item",
-    "batch_fix_work_items",
 ]

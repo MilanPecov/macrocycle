@@ -8,4 +8,4 @@ class AgentPort(Protocol):
 
     def run_prompt(self, prompt: str) -> tuple[int, str]:
         """Execute a prompt and return (exit_code, output_text)."""
-        raise NotImplementedError
+        ...

@@ -5,11 +5,8 @@ import sys
 
 
 def resolve_input(text: str | None, file: str | None) -> str | None:
-    """
-    Resolve input from argument, file, or stdin.
-    
-    This is an application service that prepares input for use cases.
-    
+    """Resolve input from argument, file, or stdin.
+
     Priority:
     1. Explicit "-" means read from stdin
     2. If no text/file provided and stdin has data, read stdin

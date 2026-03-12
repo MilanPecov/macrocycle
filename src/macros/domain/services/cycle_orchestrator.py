@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Callable, Literal
 
 from macros.domain.model.macro import Macro, LlmStep, GateStep
 from macros.domain.model.cycle import Cycle, CycleStatus, StepRun
@@ -8,9 +7,6 @@ from macros.domain.ports.cycle_store_port import CycleStorePort
 from macros.domain.ports.console_port import ConsolePort
 from macros.domain.services.prompt_builder import PromptBuilder
 from macros.domain.services.template_renderer import TemplateRenderer
-
-
-StepCallback = Callable[[int, int, str, Literal["llm", "gate"]], None]
 
 
 class CycleOrchestrator:
@@ -34,7 +30,6 @@ class CycleOrchestrator:
         *,
         auto_approve: bool = False,
         stop_after: str | None = None,
-        on_step_start: StepCallback | None = None,
     ) -> Cycle:
         """Execute a macro and return the cycle."""
         started_at = datetime.now(timezone.utc)
@@ -48,9 +43,6 @@ class CycleOrchestrator:
         self._console.info(f"Artifacts: {cycle_dir}")
 
         for idx, step in enumerate(macro.steps, start=1):
-            if on_step_start:
-                on_step_start(idx, len(macro.steps), step.id, step.type)
-
             self._log_step_start(idx, len(macro.steps), step.id, step.type)
 
             if isinstance(step, GateStep):
