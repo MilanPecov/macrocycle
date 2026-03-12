@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.3.0 (2026-03-12)
+
+### Refactor
+
+- strip integrations layer, focus on core control loop
+
 ## v0.2.0 (2026-01-21)
 
 ### Feat
